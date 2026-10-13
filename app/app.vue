@@ -16,9 +16,12 @@ const siteRoot = ref<HTMLElement | null>(null)
 const colorMode = useColorMode()
 const themeReady = ref(false)
 const themeTransitioning = ref(false)
+const startupLoading = ref(true)
+const fontUnavailable = ref(false)
+let startupTimer: ReturnType<typeof setTimeout> | undefined
 
 const currentYear = new Date().getFullYear()
-const email = 'dreyast.laurent@gmail.com'
+const email = 'ralphlaurencesayo@gmail.com'
 
 /* ========================================
   SEO / FONTS / PRECONNECTS
@@ -28,12 +31,12 @@ useHead({
   htmlAttrs: {
     lang: 'en',
   },
-  title: 'Ralph Laurence Sayo - Full-Stack & Mobile Developer',
+  title: 'Ralph Laurence Sayo - Full-Stack Web & Mobile Developer',
   meta: [
     {
       name: 'description',
       content:
-        'Portfolio of Ralph Laurence C. Sayo, a full-stack and mobile developer showcasing GraphiScan, an AI-assisted dysgraphia-screening capstone.',
+        'Portfolio of Ralph Laurence Sayo, a full-stack and mobile developer showcasing GraphiScan, an AI-assisted dysgraphia-screening capstone.',
     },
     { name: 'theme-color', content: '#0e1012' },
 
@@ -42,7 +45,7 @@ useHead({
     { property: 'og:type', content: 'website' },
     {
       property: 'og:title',
-      content: 'Ralph Laurence Sayo - Full-Stack & Mobile Developer',
+      content: 'Ralph Laurence Sayo - Full-Stack Web & Mobile Developer',
     },
     {
       property: 'og:description',
@@ -57,7 +60,7 @@ useHead({
     { name: 'twitter:card', content: 'summary' },
     {
       name: 'twitter:title',
-      content: 'Ralph Laurence Sayo - Full-Stack & Mobile Developer',
+      content: 'Ralph Laurence Sayo - Full-Stack Web & Mobile Developer',
     },
     {
       name: 'twitter:description',
@@ -65,19 +68,21 @@ useHead({
         'Full-stack and mobile developer showcasing the GraphiScan capstone project.',
     },
   ],
+  noscript: [{ innerHTML: '<style>.startup-loader { display: none !important; }</style>' }],
   link: [
     { rel: 'preconnect', href: 'https://cdn.jsdelivr.net' },
-    { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-    { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
     {
-      rel: 'stylesheet',
-      href: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap',
+      rel: 'preload',
+      href: '/fonts/space-grotesk-latin-variable.woff2',
+      as: 'font',
+      type: 'font/woff2',
+      crossorigin: '',
     },
     {
       rel: 'canonical',
       href: 'https://ralph-portfolio-tau.vercel.app',
     },
-    { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+    { rel: 'icon', type: 'image/png', sizes: '64x64', href: '/favicon.png?v=rl' },
   ],
 })
 
@@ -159,16 +164,42 @@ const project = {
   number: '01',
   title: 'GraphiScan',
   category: 'AI / CAPSTONE',
-  period: 'Fourth year',
+  period: '2025–2026 · In development',
   subtitle: 'Screening dysgraphia through handwriting analysis.',
   description:
-    'Deep learning models trained to catch patterns the eye misses.',
+    'Lead programmer for a three-person capstone team developing CNN-based handwriting screening, student records, and evaluator access across web and mobile interfaces.',
   note:
     'Presented as a screening research project, not a clinical diagnosis tool.',
-  stack: ['Python', 'Flask', 'Vue', 'PyTorch', 'OpenCV', 'TensorFlow'],
+  stack: ['Python', 'Flask', 'Vue', 'Capacitor', 'TensorFlow', 'Keras', 'MySQL'],
+  repository: 'https://github.com/Laurenceonly/Graphiscan',
   image: '/images/gscan1.png',
   imageAlt: 'GraphiScan application screenshot',
 }
+
+const additionalProjects = [
+  {
+    id: 'odyssey',
+    number: '02',
+    title: 'Odyssey',
+    category: '3D / EXPLORATION',
+    status: 'Prototype',
+    subtitle: 'A solar system to explore.',
+    description: 'A browser-based space exploration prototype with guided discovery and interactive field guides.',
+    stack: ['JavaScript', 'Three.js', 'Vite'],
+    repository: 'https://github.com/Laurenceonly/Odyssey-Space-Exploration-Game',
+  },
+  {
+    id: 'iskol',
+    number: '03',
+    title: 'ISKOL',
+    category: 'WEB / PRODUCTIVITY',
+    status: 'Preview in preparation',
+    subtitle: 'Student life, in one workspace.',
+    description: 'Subjects, class schedules, and notes brought together in a student productivity application.',
+    stack: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS', 'Supabase'],
+    repository: 'https://github.com/Laurenceonly/Iskol',
+  },
+]
 
 const skillGroups = [
   {
@@ -180,6 +211,10 @@ const skillGroups = [
       'JavaScript',
       'TypeScript',
       'Bootstrap',
+      'Tailwind CSS',
+      'Three.js',
+      'GSAP',
+      'Vite',
       'Vue',
       'Nuxt',
       'React',
@@ -190,6 +225,7 @@ const skillGroups = [
       'MySQL',
       'PostgreSQL',
       'MongoDB',
+      'Supabase',
     ],
   },
   {
@@ -198,6 +234,8 @@ const skillGroups = [
     skills: [
       'Flutter',
       'React Native',
+      'Capacitor',
+      'Dart',
       'Firebase',
       'Python',
       'Flask',
@@ -210,7 +248,7 @@ const skillGroups = [
   {
     title: 'Design & Editing',
     description: 'Visual editing for posters, tarpaulins, and event materials.',
-    skills: ['CapCut', 'Premiere Pro', 'Canva'],
+    skills: ['CapCut', 'Premiere Pro', 'Canva', 'Photoshop'],
   },
   {
     title: 'Foundations & tools',
@@ -220,6 +258,7 @@ const skillGroups = [
       'C++',
       'Git',
       'GitHub',
+      'VS Code',
       'Docker',
       'Postman',
       'Figma',
@@ -239,13 +278,13 @@ const skillGroups = [
 const certifications = [
   {
     title: 'CCNA: Introduction to Networks',
-    issuer: 'Davao Del Norte State College · Cisco Networking Academy',
+    issuer: 'Davao del Norte State College · Cisco Networking Academy',
     date: 'May 2025',
     pdfUrl: '/certificates/ccna1.pdf',
   },
   {
     title: 'CCNA: Switching, Routing, and Wireless Essentials',
-    issuer: 'Davao Del Norte State College · Cisco Networking Academy',
+    issuer: 'Davao del Norte State College · Cisco Networking Academy',
     date: 'Dec 2025',
     pdfUrl: '/certificates/ccna2.pdf',
   },
@@ -261,6 +300,13 @@ const techIconBase = 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons'
 // No public brand mark for a tool? Leave it out — it falls back to initials.
 const techIconSlugs: Record<string, string> = {
   Python: 'python',
+  Capacitor: 'capacitor',
+  Dart: 'dart',
+  'Tailwind CSS': 'tailwindcss',
+  'Three.js': 'threedotjs',
+  GSAP: 'gsap',
+  Vite: 'vite',
+  Supabase: 'supabase',
   Flask: 'flask',
   Vue: 'vuedotjs',
   Nuxt: 'nuxtdotjs',
@@ -556,8 +602,42 @@ function refreshScroll() {
   refreshMotion?.()
 }
 
+async function prepareStartup() {
+  try {
+    await nextTick()
+
+    const portrait = siteRoot.value?.querySelector<HTMLImageElement>(
+      colorMode.value === 'light' ? '.hero-portrait-color' : '.hero-portrait-mono',
+    )
+
+    // Wait only for the first screen; lower sections never delay entry.
+    const assets: Promise<unknown>[] = []
+    if (document.fonts) assets.push(document.fonts.load('500 1em "Space Grotesk"'))
+    if (portrait) assets.push(portrait.decode())
+
+    await Promise.race([
+      Promise.allSettled(assets),
+      new Promise<void>((resolve) => {
+        startupTimer = setTimeout(resolve, 2400)
+      }),
+    ])
+  } finally {
+    clearTimeout(startupTimer)
+    if (!disposed) {
+      // If the font misses the deadline, keep the fallback for this visit.
+      // A late font response must not shift text after the loader has gone.
+      fontUnavailable.value = !document.fonts?.check('500 1em "Space Grotesk"')
+      await nextTick()
+      if (!disposed) startupLoading.value = false
+    }
+  }
+}
+
 onMounted(async () => {
   themeReady.value = true
+  void prepareStartup().catch(() => {
+    if (!disposed) startupLoading.value = false
+  })
 
   pointerQuery = window.matchMedia(
     '(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)',
@@ -587,47 +667,7 @@ onMounted(async () => {
     }
 
     media.add('(prefers-reduced-motion: no-preference)', () => {
-      gsap
-        .timeline({
-          defaults: {
-            ease: 'power3.out',
-          },
-        })
-        .from(select('.hero-eyebrow'), {
-          y: 18,
-          opacity: 0,
-          duration: 0.7,
-        })
-        .from(
-          select('.hero-line > span'),
-          {
-            yPercent: 115,
-            rotate: 3,
-            duration: 1.15,
-            stagger: 0.13,
-          },
-          '-=0.35',
-        )
-        .from(
-          select('.hero-portrait-wrap'),
-          {
-            opacity: 0,
-            y: 24,
-            duration: 0.9,
-          },
-          '-=0.9',
-        )
-        .from(
-          select('.hero-bottom > *'),
-          {
-            y: 28,
-            opacity: 0,
-            duration: 0.85,
-            stagger: 0.12,
-          },
-          '-=0.65',
-        )
-
+      // The hero is visible in the server-rendered page and stays visible.
       gsap.to(select('.reading-progress'), {
         scaleX: 1,
         ease: 'none',
@@ -698,13 +738,21 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   disposed = true
+  clearTimeout(startupTimer)
   clearTimeout(emailCopyTimer)
   cleanupMotion?.()
 })
 </script>
 
 <template>
-  <div ref="siteRoot" class="site-shell">
+  <div ref="siteRoot" class="site-shell" :class="{ 'font-fallback': fontUnavailable }">
+    <Transition name="startup" type="transition">
+      <div v-if="startupLoading" class="startup-loader" role="status" aria-live="polite">
+        <span class="startup-mark" aria-hidden="true">rl<span class="accent">.</span></span>
+        <span class="startup-track" aria-hidden="true"></span>
+        <span class="startup-label">Loading portfolio</span>
+      </div>
+    </Transition>
     <div class="reading-progress" aria-hidden="true"></div>
 
     <a class="skip-link" href="#main">
@@ -727,6 +775,7 @@ onBeforeUnmount(() => {
       <nav class="main-nav" aria-label="Main navigation">
         <a href="#work">Work</a>
         <a href="#skills">Skills</a>
+        <a href="#experience">Experience</a>
         <a href="#process">Process</a>
         <a href="#contact">Contact</a>
       </nav>
@@ -804,8 +853,8 @@ onBeforeUnmount(() => {
             class="hero-portrait hero-portrait-mono"
             src="/images/ralph2.png"
             alt=""
-            width="1000"
-            height="1235"
+            width="2107"
+            height="2458"
             loading="eager"
             fetchpriority="high"
             decoding="async"
@@ -815,8 +864,8 @@ onBeforeUnmount(() => {
             class="hero-portrait hero-portrait-color"
             src="/images/ralph1.png"
             alt=""
-            width="1000"
-            height="1235"
+            width="2107"
+            height="2458"
             loading="eager"
             decoding="async"
           />
@@ -830,7 +879,7 @@ onBeforeUnmount(() => {
         <h1
           id="hero-title"
           class="hero-title"
-          aria-label="Ralph Laurence."
+          aria-label="Ralph Laurence Sayo"
         >
           <span class="hero-line" aria-hidden="true">
             <span>RALPH</span>
@@ -856,15 +905,19 @@ onBeforeUnmount(() => {
 
           <div class="hero-intro">
             <p>
-              "I'm Ralph Laurence C. Sayo — a fourth-year BS Information Technology
-               student who builds full-stack web and mobile applications.
-                GraphiScan, my capstone, pushed me to train and deploy a real machine learning model from scratch."
+              I'm Ralph Laurence Sayo, a BS Information Technology student.
             </p>
 
+            <div class="hero-actions">
             <a class="text-link" href="#work">
               Explore my work
               <span aria-hidden="true">↗</span>
             </a>
+            <a class="text-link" href="/resume/Ralph_Laurence_Sayo_Resume.pdf" download>
+              Download resume (PDF)
+              <span aria-hidden="true">↗</span>
+            </a>
+            </div>
           </div>
         </div>
       </section>
@@ -879,7 +932,7 @@ onBeforeUnmount(() => {
         aria-labelledby="work-title"
       >
         <div class="section-heading" data-reveal>
-          <p class="eyebrow">01 / FEATURED PROJECT</p>
+          <p class="eyebrow">01 / SELECTED WORK</p>
 
           <div class="section-heading-bottom">
             <h2 id="work-title">
@@ -888,8 +941,8 @@ onBeforeUnmount(() => {
             </h2>
 
             <p>
-              My capstone project combining machine learning with
-              a practical screening workflow.
+              Projects across machine learning, interactive 3D,
+              and everyday web applications.
             </p>
           </div>
         </div>
@@ -950,6 +1003,10 @@ onBeforeUnmount(() => {
               >
                 {{ project.note }}
               </p>
+              <a class="text-link" :href="project.repository" target="_blank" rel="noopener noreferrer">
+                View GraphiScan on GitHub
+                <span aria-hidden="true">↗</span>
+              </a>
             </div>
           </div>
 
@@ -988,6 +1045,8 @@ onBeforeUnmount(() => {
                 class="project-image"
                 :src="project.image"
                 :alt="project.imageAlt"
+                width="1672"
+                height="940"
                 loading="eager"
                 fetchpriority="high"
                 decoding="async"
@@ -1021,6 +1080,48 @@ onBeforeUnmount(() => {
               <span class="mono" aria-hidden="true">
                 ↗
               </span>
+            </div>
+          </div>
+        </article>
+
+        <article
+          v-for="item in additionalProjects"
+          :id="item.id"
+          :key="item.id"
+          class="project-row additional-project"
+          :aria-labelledby="`${item.id}-title`"
+          data-reveal
+        >
+          <div class="project-info">
+            <div class="project-meta mono">
+              <span>{{ item.number }} /</span>
+              <span>{{ item.category }}</span>
+              <span>{{ item.status }}</span>
+            </div>
+            <div class="project-heading">
+              <h3 :id="`${item.id}-title`">{{ item.title }}</h3>
+              <p class="project-subtitle">{{ item.subtitle }}</p>
+            </div>
+            <div class="project-copy">
+              <p class="project-description">{{ item.description }}</p>
+              <ul class="tech-list skill-tokens" :aria-label="`${item.title} technologies`">
+                <li v-for="tech in item.stack" :key="tech">
+                  <span
+                    v-if="techIconUrl(tech)"
+                    class="token-icon"
+                    :style="{ '--tech-icon': `url('${techIconUrl(tech)}')` }"
+                    aria-hidden="true"
+                  />
+                  <span v-else class="token-icon token-icon-initial" aria-hidden="true">
+                    {{ techInitials(tech) }}
+                  </span>
+                  {{ tech }}
+                </li>
+              </ul>
+              <a class="text-link" :href="item.repository" target="_blank" rel="noopener noreferrer">
+                View {{ item.title }} on GitHub
+                <span aria-hidden="true">↗</span>
+              </a>
             </div>
           </div>
         </article>
@@ -1199,6 +1300,52 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
+      <!-- Experience & education -->
+
+      <section
+        id="experience"
+        class="experience-section page-width"
+        aria-labelledby="experience-title"
+      >
+        <div class="section-heading" data-reveal>
+          <p class="eyebrow">03 / EXPERIENCE &amp; EDUCATION</p>
+          <div class="section-heading-bottom">
+            <h2 id="experience-title">
+              Learning.<br />
+              <span class="muted">Through real work.</span>
+            </h2>
+            <p>Technical operations experience alongside my Information Technology degree.</p>
+          </div>
+        </div>
+
+        <article class="background-row" aria-labelledby="role-title" data-reveal>
+          <div class="background-meta mono muted">
+            <p>September 2026–Present</p>
+            <p>Remote</p>
+          </div>
+          <div class="background-content">
+            <h3 id="role-title">Technical Staff</h3>
+            <p class="background-subtitle">Cruisechef International Academy</p>
+            <div class="background-description">
+              <p>Support the academy's admin dashboard, reservations, automated email workflows, and account troubleshooting for staff and trainees, with 200+ reservations on record.</p>
+              <p>Maintain social media channels and the content calendar, and contribute to planning an in-house trainee account management application.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="background-row" aria-labelledby="education-title" data-reveal>
+          <div class="background-meta mono muted">
+            <p>Expected June 2027</p>
+            <p>Fourth year</p>
+          </div>
+          <div class="background-content">
+            <h3 id="education-title">BS Information Technology</h3>
+            <p class="background-subtitle">Davao del Norte State College</p>
+            <p class="background-description">Panabo City, Philippines</p>
+          </div>
+        </article>
+      </section>
+
       <!-- ==================================
           PROCESS
       =================================== -->
@@ -1209,7 +1356,7 @@ onBeforeUnmount(() => {
         aria-labelledby="process-title"
       >
         <div class="section-heading" data-reveal>
-          <p class="eyebrow">03 / HOW I BUILD</p>
+          <p class="eyebrow">04 / HOW I BUILD</p>
 
           <div class="section-heading-bottom">
             <h2 id="process-title">
@@ -1252,7 +1399,7 @@ onBeforeUnmount(() => {
       >
         <div data-reveal>
           <p class="eyebrow">
-            04 / WHAT'S NEXT?
+            05 / WHAT'S NEXT?
           </p>
 
           <h2 id="contact-title">
@@ -1422,7 +1569,7 @@ onBeforeUnmount(() => {
 
     <footer class="site-footer page-width">
       <span>
-        © {{ currentYear }} Ralph Laurence C. Sayo
+        © {{ currentYear }} Ralph Laurence Sayo
       </span>
 
       <div class="footer-links">

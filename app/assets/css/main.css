@@ -1,3 +1,11 @@
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url('/fonts/space-grotesk-latin-variable.woff2') format('woff2');
+}
+
 /* ========================================
    DESIGN SYSTEM
 ======================================== */
@@ -2068,4 +2076,186 @@ summary {
   ::view-transition-new(root) {
     animation: none !important;
   }
+}
+
+/* Content additions follow the portfolio's existing project typography. */
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.hero-actions .text-link {
+  margin-top: 0;
+}
+
+.additional-project {
+  margin-top: 72px;
+  padding-top: 40px;
+  border-top: 1px solid var(--line);
+}
+
+.additional-project .project-info {
+  min-height: 0;
+}
+
+.project-meta {
+  flex-wrap: wrap;
+}
+
+.experience-section {
+  padding-block: 20px 130px;
+}
+
+.background-row {
+  display: grid;
+  grid-template-columns: 1fr 1.85fr;
+  gap: 48px;
+  padding-block: 40px;
+  border-top: 1px solid var(--line);
+}
+
+.background-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 8px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.background-content {
+  min-width: 0;
+}
+
+.background-content h3 {
+  font-family: var(--display);
+  font-size: clamp(28px, 3.5vw, 44px);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+}
+
+.background-subtitle {
+  margin-top: 14px;
+  font-size: 19px;
+  line-height: 1.5;
+  letter-spacing: -0.025em;
+}
+
+.background-description {
+  display: grid;
+  gap: 14px;
+  max-width: 65ch;
+  margin-top: 22px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+@media (max-width: 720px) {
+  .additional-project {
+    margin-top: 44px;
+    padding-top: 28px;
+  }
+
+  .experience-section {
+    padding-block: 12px 80px;
+  }
+
+  .background-row {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    padding-block: 28px;
+  }
+
+  .background-meta {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    padding-top: 0;
+  }
+}
+
+/* A short first-screen readiness gate; content is already rendered behind it. */
+.startup-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: var(--bg);
+  color: var(--text);
+  animation: startup-expire 1ms step-end 4s forwards;
+}
+
+@keyframes startup-expire {
+  to { visibility: hidden; pointer-events: none; }
+}
+
+.startup-mark {
+  font-family: var(--display);
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.startup-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.startup-track {
+  position: relative;
+  width: 80px;
+  height: 2px;
+  overflow: hidden;
+  background: var(--line);
+}
+
+.startup-track::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform: translateX(-100%);
+  animation: startup-sweep 900ms linear infinite;
+}
+
+@keyframes startup-sweep {
+  to { transform: translateX(100%); }
+}
+
+.startup-leave-active {
+  transition: opacity 180ms var(--ease-out);
+  pointer-events: none;
+}
+
+.startup-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .startup-loader {
+    animation: startup-expire 1ms step-end 4s forwards !important;
+  }
+
+  .startup-track::after {
+    animation: none;
+    transform: none;
+    opacity: 0.6;
+  }
+
+  .startup-leave-active {
+    transition: none;
+  }
+}
+
+.font-fallback {
+  --display: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
