@@ -12,7 +12,7 @@ Reviewed 13 October 2026 against the supplied Ralph_Laurence_Sayo_Resume_New_Ema
 | Education | Davao del Norte State College, Panabo City; expected June 2027. |
 | Experience | Technical Staff, Cruisechef International Academy; September 2026–present, remote. Dashboard/reservation support, automated email workflows, account troubleshooting, social media, and application planning. |
 | GraphiScan | 2025–2026 capstone, in development; lead programmer on a three-person team. Removed unsupported wording claiming model deployment from scratch. Added repository link. |
-| Other projects | Odyssey prototype and ISKOL, with accurate descriptions, stacks, status, and repository links. |
+| Other projects | Odyssey is live and playable at https://odyssey-explorer-psi.vercel.app/; ISKOL remains in preview preparation. Both include descriptions, stacks, status, and repository links. |
 | Skills | Added resume/GitHub omissions: Dart, Capacitor, Tailwind CSS, Three.js, GSAP, Vite, Supabase, VS Code, and Photoshop (GitHub creative-work section). |
 | Resume | Added an unchanged copy of the supplied PDF and a download link. The source is preserved. |
 | Hero intro | Shortened to "I'm Ralph Laurence Sayo, a BS Information Technology student." The developer title remains in the existing hero label. |

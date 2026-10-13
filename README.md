@@ -7,7 +7,7 @@ Live site: https://ralph-portfolio-tau.vercel.app/
 ## Content
 
 - GraphiScan: an AI-assisted handwriting screening capstone in active development, led by Ralph as programmer on a three-person team. Screening outputs support expert review; they are not clinical diagnoses.
-- Odyssey: Solar System Explorer: a browser-based 3D exploration prototype using JavaScript, Three.js, and Vite.
+- Odyssey: Solar System Explorer: a playable browser-based 3D exploration game using JavaScript, Three.js, and Vite. [Play Odyssey](https://odyssey-explorer-psi.vercel.app/).
 - ISKOL: a student productivity application using Next.js, React, TypeScript, Tailwind CSS, and Supabase; public preview in preparation.
 - Technical operations experience, education, skill explorer, and Cisco Networking Academy course certificates.
 - Downloadable supplied resume and contact form.

@@ -182,11 +182,12 @@ const additionalProjects = [
     number: '02',
     title: 'Odyssey',
     category: '3D / EXPLORATION',
-    status: 'Prototype',
+    status: 'Live · Playable',
     subtitle: 'A solar system to explore.',
-    description: 'A browser-based space exploration prototype with guided discovery and interactive field guides.',
+    description: 'A playable browser-based space exploration game with guided discovery and interactive field guides.',
     stack: ['JavaScript', 'Three.js', 'Vite'],
     repository: 'https://github.com/Laurenceonly/Odyssey-Space-Exploration-Game',
+    liveUrl: 'https://odyssey-explorer-psi.vercel.app/',
   },
   {
     id: 'iskol',
@@ -1118,6 +1119,10 @@ onBeforeUnmount(() => {
                   {{ tech }}
                 </li>
               </ul>
+              <a v-if="item.liveUrl" class="text-link" :href="item.liveUrl" target="_blank" rel="noopener noreferrer">
+                Play {{ item.title }}
+                <span aria-hidden="true">↗</span>
+              </a>
               <a class="text-link" :href="item.repository" target="_blank" rel="noopener noreferrer">
                 View {{ item.title }} on GitHub
                 <span aria-hidden="true">↗</span>
