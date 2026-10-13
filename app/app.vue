@@ -843,8 +843,8 @@ onBeforeUnmount(() => {
           opacity based on the existing `.light` root class (no JS/watchers
           needed, same pattern as every other themed element on the site).
 
-          ralph1.png = full color cutout  -> shown in LIGHT mode
-          ralph2.png = grayscale cutout   -> shown in DARK mode (default)
+          ralph1.webp = full color cutout  -> shown in LIGHT mode
+          ralph2.webp = grayscale cutout   -> shown in DARK mode (default)
 
           Purely decorative (the name is already announced via the h1's
           aria-label below), so it's aria-hidden with empty alt text.
@@ -852,10 +852,10 @@ onBeforeUnmount(() => {
         <div class="hero-portrait-wrap" aria-hidden="true">
           <img
             class="hero-portrait hero-portrait-mono"
-            src="/images/ralph2.png"
+            src="/images/ralph2.webp"
             alt=""
-            width="2107"
-            height="2458"
+            width="1000"
+            height="1167"
             loading="eager"
             fetchpriority="high"
             decoding="async"
@@ -863,10 +863,10 @@ onBeforeUnmount(() => {
 
           <img
             class="hero-portrait hero-portrait-color"
-            src="/images/ralph1.png"
+            src="/images/ralph1.webp"
             alt=""
-            width="2107"
-            height="2458"
+            width="1000"
+            height="1167"
             loading="eager"
             decoding="async"
           />
