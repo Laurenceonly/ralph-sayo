@@ -172,7 +172,7 @@ const project = {
     'Presented as a screening research project, not a clinical diagnosis tool.',
   stack: ['Python', 'Flask', 'Vue', 'Capacitor', 'TensorFlow', 'Keras', 'MySQL'],
   repository: 'https://github.com/Laurenceonly/Graphiscan',
-  image: '/images/gscan1.png',
+  image: '/images/gscan1.webp',
   imageAlt: 'GraphiScan application screenshot',
 }
 
@@ -597,10 +597,17 @@ function resetPreview(event: PointerEvent) {
 
 let cleanupMotion: (() => void) | undefined
 let refreshMotion: (() => void) | undefined
+let refreshFrame: number | undefined
+let motionPreference: MediaQueryList | undefined
+let motionStarted = false
 let disposed = false
 
 function refreshScroll() {
-  refreshMotion?.()
+  if (!refreshMotion || refreshFrame !== undefined) return
+  refreshFrame = requestAnimationFrame(() => {
+    refreshFrame = undefined
+    if (!disposed) refreshMotion?.()
+  })
 }
 
 async function prepareStartup() {
@@ -634,7 +641,11 @@ async function prepareStartup() {
   }
 }
 
-onMounted(async () => {
+function startMotionWhenEnabled() {
+  if (motionPreference?.matches) void initializeMotion()
+}
+
+onMounted(() => {
   themeReady.value = true
   void prepareStartup().catch(() => {
     if (!disposed) startupLoading.value = false
@@ -643,6 +654,15 @@ onMounted(async () => {
   pointerQuery = window.matchMedia(
     '(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)',
   )
+
+  motionPreference = window.matchMedia('(prefers-reduced-motion: no-preference)')
+  motionPreference.addEventListener('change', startMotionWhenEnabled)
+  startMotionWhenEnabled()
+})
+
+async function initializeMotion() {
+  if (motionStarted || disposed) return
+  motionStarted = true
 
   try {
     const [{ gsap }, { ScrollTrigger }] = await Promise.all([
@@ -725,7 +745,7 @@ onMounted(async () => {
       },
     )
 
-    ScrollTrigger.refresh()
+    refreshScroll()
 
     void document.fonts.ready.then(() => {
       if (!disposed) refreshScroll()
@@ -735,10 +755,12 @@ onMounted(async () => {
 
     console.warn('Portfolio animations could not be initialized.', error)
   }
-})
+}
 
 onBeforeUnmount(() => {
   disposed = true
+  if (refreshFrame !== undefined) cancelAnimationFrame(refreshFrame)
+  motionPreference?.removeEventListener('change', startMotionWhenEnabled)
   clearTimeout(startupTimer)
   clearTimeout(emailCopyTimer)
   cleanupMotion?.()
@@ -853,6 +875,8 @@ onBeforeUnmount(() => {
           <img
             class="hero-portrait hero-portrait-mono"
             src="/images/ralph2.webp"
+            srcset="/images/ralph2-480.webp 480w, /images/ralph2-768.webp 768w, /images/ralph2.webp 1000w"
+            sizes="(max-width: 400px) 62vw, (max-width: 720px) 56vw, (max-width: 1000px) 32vw, min(34vw, 440px)"
             alt=""
             width="1000"
             height="1167"
@@ -864,6 +888,8 @@ onBeforeUnmount(() => {
           <img
             class="hero-portrait hero-portrait-color"
             src="/images/ralph1.webp"
+            srcset="/images/ralph1-480.webp 480w, /images/ralph1-768.webp 768w, /images/ralph1.webp 1000w"
+            sizes="(max-width: 400px) 62vw, (max-width: 720px) 56vw, (max-width: 1000px) 32vw, min(34vw, 440px)"
             alt=""
             width="1000"
             height="1167"
@@ -1045,11 +1071,13 @@ onBeforeUnmount(() => {
                 v-if="!failedImages[project.image]"
                 class="project-image"
                 :src="project.image"
+                srcset="/images/gscan1-640.webp 640w, /images/gscan1-960.webp 960w, /images/gscan1.webp 1672w"
+                sizes="(max-width: 720px) min(calc(100vw - 78px), 463px), (max-width: 1000px) min(calc(86vw - 117px), 783px), min(calc(86vw - 138px), 783px)"
                 :alt="project.imageAlt"
                 width="1672"
                 height="940"
-                loading="eager"
-                fetchpriority="high"
+                loading="lazy"
+                fetchpriority="auto"
                 decoding="async"
                 @load="refreshScroll"
                 @error="imageFailed(project.image)"

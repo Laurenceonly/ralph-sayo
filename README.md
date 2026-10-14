@@ -30,6 +30,8 @@ npm run build
 npm run preview
 ```
 
+Performance investigation, targeted optimizations, local Lighthouse measurements, and remaining suggestions: [performance review](docs/performance-review.md).
+
 ## Content maintenance
 
 - Portfolio content and project links: `app/app.vue`.
