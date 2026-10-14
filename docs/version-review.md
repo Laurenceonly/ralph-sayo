@@ -61,3 +61,11 @@ Ignored local artifacts live in output/playwright/:
 - version-final-loaded-360.png and version-final-loaded-1440.png
 
 The raw reports are the evidence for the scores above. Current work is local and has not changed the live Vercel site.
+
+## Deployed console-error follow-up
+
+A targeted Lighthouse 13.5.0 Best Practices audit of https://ralph-portfolio-tau.vercel.app/ at 2026-10-14T17:39:52.324Z scored **100/100**. The errors-in-console audit passed with no entries, no failing Best Practices audits, and no run warnings. This was a targeted Best Practices run, not a new full performance/SEO/accessibility run.
+
+Separate Playwright visits at 390px and 1440px recorded no console errors, page exceptions, failed network requests, or HTTP error responses. The deployed /_vercel/insights/script.js endpoint returned HTTP 200 and application/javascript. The 96 score in the supplied PageSpeed report could not be reproduced on the current deployment. No application code was changed for this follow-up.
+
+Evidence: output/playwright/live-console-audit.report.html, live-console-audit.report.json, and live-console-check.log.

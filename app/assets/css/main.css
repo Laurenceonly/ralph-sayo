@@ -806,15 +806,8 @@ summary {
 }
 
 @keyframes screenshot-enter {
-  from {
-    opacity: 0;
-    filter: drop-shadow(0 10px 10px rgb(0 0 0 / 10%));
-  }
-
-  to {
-    opacity: 1;
-    filter: drop-shadow(0 28px 30px rgb(0 0 0 / 24%));
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ========================================
