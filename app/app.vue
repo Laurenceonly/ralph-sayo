@@ -161,10 +161,8 @@ async function toggleTheme(event: MouseEvent) {
 
 const project = {
   id: 'graphiscan',
-  number: '01',
   title: 'GraphiScan',
-  category: 'AI / CAPSTONE',
-  period: '2025–2026 · In development',
+  metadata: 'Capstone project / In development',
   subtitle: 'Screening dysgraphia through handwriting analysis.',
   description:
     'Lead programmer for a three-person capstone team developing CNN-based handwriting screening, student records, and evaluator access across web and mobile interfaces.',
@@ -179,10 +177,15 @@ const project = {
 const additionalProjects = [
   {
     id: 'odyssey',
-    number: '02',
     title: 'Odyssey',
-    category: '3D / EXPLORATION',
-    status: 'Live · Playable',
+    preview: {
+      src: '/images/odyssey.webp',
+      srcset: '/images/odyssey-640.webp 640w, /images/odyssey-960.webp 960w, /images/odyssey.webp 1672w',
+      alt: 'Odyssey space exploration game showing its main menu and solar system',
+      width: 1672,
+      height: 842,
+    },
+    metadata: 'Space exploration game / Playable',
     subtitle: 'A solar system to explore.',
     description: 'A playable browser-based space exploration game with guided discovery and interactive field guides.',
     stack: ['JavaScript', 'Three.js', 'Vite'],
@@ -191,10 +194,8 @@ const additionalProjects = [
   },
   {
     id: 'iskol',
-    number: '03',
     title: 'ISKOL',
-    category: 'WEB / PRODUCTIVITY',
-    status: 'Preview in preparation',
+    metadata: 'Student planner / Preview in preparation',
     subtitle: 'Student life, in one workspace.',
     description: 'Subjects, class schedules, and notes brought together in a student productivity application.',
     stack: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS', 'Supabase'],
@@ -245,11 +246,6 @@ const skillGroups = [
       'OpenCV',
       'TensorFlow',
     ],
-  },
-  {
-    title: 'Design & Editing',
-    description: 'Visual editing for posters, tarpaulins, and event materials.',
-    skills: ['CapCut', 'Premiere Pro', 'Canva', 'Photoshop'],
   },
   {
     title: 'Foundations & tools',
@@ -342,10 +338,6 @@ const techIconSlugs: Record<string, string> = {
   Postman: 'postman',
   Figma: 'figma',
   'Cisco Networking': 'cisco',
-  'Premiere Pro': 'adobepremierepro',
-  Canva: 'canva',
-  // No public brand mark available for CapCut on Simple Icons —
-  // falls back to initials ("CA") via techInitials() below.
 }
 
 function techIconUrl(tech: string) {
@@ -790,7 +782,7 @@ onBeforeUnmount(() => {
       <a
         class="wordmark"
         href="#home"
-        aria-label="Ralph Laurence home"
+        aria-label="rl. — Ralph Laurence home"
       >
         rl<span>.</span>
       </a>
@@ -981,11 +973,7 @@ onBeforeUnmount(() => {
           data-reveal
         >
           <div class="project-info">
-            <div class="project-meta mono">
-              <span>{{ project.number }} /</span>
-              <span>{{ project.category }}</span>
-              <span>{{ project.period }}</span>
-            </div>
+            <p class="project-meta eyebrow">{{ project.metadata }}</p>
 
             <div class="project-heading">
               <h3 :id="`${project.id}-title`">
@@ -1046,22 +1034,6 @@ onBeforeUnmount(() => {
             <div class="stage-grid" aria-hidden="true"></div>
             <div class="stage-halo" aria-hidden="true"></div>
 
-            <div class="stage-topline mono">
-              <span class="stage-identity">
-                <span class="window-dots" aria-hidden="true">
-                  <i></i>
-                  <i></i>
-                  <i></i>
-                </span>
-
-                {{ project.title.toUpperCase() }}
-              </span>
-
-              <span>
-                {{ project.category.split(' / ')[0] }}
-              </span>
-            </div>
-
             <div
               class="project-image-wrap"
               role="region"
@@ -1101,15 +1073,6 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <div class="stage-bottomline">
-              <span class="mono">
-                {{ project.stack.slice(0, 2).join(' + ') }}
-              </span>
-
-              <span class="mono" aria-hidden="true">
-                ↗
-              </span>
-            </div>
           </div>
         </article>
 
@@ -1122,11 +1085,7 @@ onBeforeUnmount(() => {
           data-reveal
         >
           <div class="project-info">
-            <div class="project-meta mono">
-              <span>{{ item.number }} /</span>
-              <span>{{ item.category }}</span>
-              <span>{{ item.status }}</span>
-            </div>
+            <p class="project-meta eyebrow">{{ item.metadata }}</p>
             <div class="project-heading">
               <h3 :id="`${item.id}-title`">{{ item.title }}</h3>
               <p class="project-subtitle">{{ item.subtitle }}</p>
@@ -1155,6 +1114,41 @@ onBeforeUnmount(() => {
                 View {{ item.title }} on GitHub
                 <span aria-hidden="true">↗</span>
               </a>
+            </div>
+          </div>
+
+          <div
+            v-if="item.preview"
+            class="project-stage"
+            @pointermove="movePreview"
+            @pointerleave="resetPreview"
+            @pointercancel="resetPreview"
+          >
+            <div class="stage-grid" aria-hidden="true"></div>
+            <div class="stage-halo" aria-hidden="true"></div>
+            <div
+              class="project-image-wrap"
+              role="region"
+              :aria-label="`${item.title} screenshot`"
+            >
+              <img
+                v-if="!failedImages[item.preview.src]"
+                class="project-image"
+                :src="item.preview.src"
+                :srcset="item.preview.srcset"
+                sizes="(max-width: 720px) min(calc(100vw - 78px), 463px), (max-width: 1000px) min(calc(86vw - 117px), 783px), min(calc(86vw - 138px), 783px)"
+                :alt="item.preview.alt"
+                :width="item.preview.width"
+                :height="item.preview.height"
+                loading="lazy"
+                decoding="async"
+                @load="refreshScroll"
+                @error="imageFailed(item.preview.src)"
+              />
+              <div v-else class="image-placeholder">
+                <span class="placeholder-title">{{ item.title }}</span>
+                <span class="mono">SCREENSHOT UNAVAILABLE</span>
+              </div>
             </div>
           </div>
         </article>
@@ -1227,20 +1221,19 @@ onBeforeUnmount(() => {
             aria-live="polite"
             :aria-label="activeSkillGroup.title"
           >
-            <Transition
-              name="skill"
-              mode="out-in"
-              @after-enter="refreshScroll"
-            >
               <div
-                :key="selectedSkill"
+                v-for="(group, groupIndex) in skillGroups"
+                :key="group.title"
                 class="skill-panel-content"
+                :class="{ 'is-active': selectedSkill === groupIndex }"
+                :aria-hidden="selectedSkill !== groupIndex"
+                :inert="selectedSkill !== groupIndex"
               >
                 <span
                   class="skill-watermark"
                   aria-hidden="true"
                 >
-                  {{ String(selectedSkill + 1).padStart(2, '0') }}
+                  {{ String(groupIndex + 1).padStart(2, '0') }}
                 </span>
 
                 <p class="eyebrow">
@@ -1248,19 +1241,19 @@ onBeforeUnmount(() => {
                 </p>
 
                 <h3>
-                  {{ activeSkillGroup.title }}
+                  {{ group.title }}
                 </h3>
 
                 <p class="skill-description">
-                  {{ activeSkillGroup.description }}
+                  {{ group.description }}
                 </p>
 
                 <ul
                   class="skill-tokens"
-                  :aria-label="activeSkillGroup.title"
+                  :aria-label="group.title"
                 >
                   <li
-                    v-for="(skill, index) in activeSkillGroup.skills"
+                    v-for="(skill, index) in group.skills"
                     :key="skill"
                     :style="{ '--token-index': index }"
                   >
@@ -1278,7 +1271,7 @@ onBeforeUnmount(() => {
                   </li>
                 </ul>
               </div>
-            </Transition>
+
           </div>
         </div>
 
@@ -1454,7 +1447,6 @@ onBeforeUnmount(() => {
           <div class="contact-columns">
             <form
               class="contact-form"
-              novalidate
               @submit.prevent="submitContactForm"
             >
               <p class="mono muted contact-form-label">
@@ -1586,9 +1578,8 @@ onBeforeUnmount(() => {
               </div>
 
               <p>
-                For dev collaborations, freelance editing<br />
-                requests, or just a conversation about building<br />
-                things — these are my socials, feel free to reach out.
+                For development projects, collaborations, or a conversation
+                about building something together, feel free to reach out.
               </p>
             </div>
           </div>

@@ -582,10 +582,10 @@ summary {
 }
 
 .section-heading-bottom {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 40px;
+  display: grid;
+  grid-template-columns: 1fr 0.85fr;
+  align-items: end;
+  gap: 80px;
 }
 
 .section-heading h2 {
@@ -596,7 +596,7 @@ summary {
 }
 
 .section-heading-bottom > p {
-  max-width: 280px;
+  max-width: 400px;
   color: var(--muted);
   font-size: 15px;
   line-height: 1.8;
@@ -624,15 +624,10 @@ summary {
 
 .project-meta {
   grid-column: 1 / -1;
-  display: flex;
-  gap: 24px;
-  margin-bottom: 36px;
+  margin-bottom: 28px;
   color: var(--muted);
 }
 
-.project-meta > span:first-child {
-  color: var(--accent);
-}
 
 .project-info h3 {
   font-size: clamp(52px, 6.5vw, 92px);
@@ -768,9 +763,11 @@ summary {
 }
 
 .project-image {
-  width: min(86%, 940px);
+  width: min(86%, calc(440px * 1672 / 940));
+  height: auto;
+  aspect-ratio: 1672 / 940;
   max-height: 440px;
-  object-fit: contain;
+  object-fit: cover;
   border-radius: 8px;
   filter: drop-shadow(0 28px 30px rgb(0 0 0 / 24%));
   transform: rotateX(var(--rotate-x)) rotateY(var(--rotate-y));
@@ -954,6 +951,7 @@ summary {
 }
 
 .skill-panel {
+  display: grid;
   position: relative;
   min-width: 0;
   min-height: 380px;
@@ -964,6 +962,8 @@ summary {
 }
 
 .skill-panel-content {
+  grid-area: 1 / 1;
+  visibility: hidden;
   position: relative;
   isolation: isolate;
   padding: 42px;
@@ -982,6 +982,10 @@ summary {
   letter-spacing: -0.09em;
   opacity: 0.045;
   pointer-events: none;
+}
+
+.skill-panel-content.is-active {
+  visibility: visible;
 }
 
 .skill-panel .eyebrow {
@@ -1065,22 +1069,6 @@ summary {
   }
 }
 
-.skill-enter-active,
-.skill-leave-active {
-  transition:
-    opacity 180ms ease,
-    transform 250ms var(--ease-out);
-}
-
-.skill-enter-from {
-  opacity: 0;
-  transform: translateY(12px);
-}
-
-.skill-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
 
 @keyframes token-enter {
   from {
@@ -1580,6 +1568,10 @@ summary {
     gap: 32px;
   }
 
+  .section-heading-bottom {
+    column-gap: 40px;
+  }
+
   .project-info {
     gap: 0 40px;
     min-height: 220px;
@@ -1615,6 +1607,15 @@ summary {
 ======================================== */
 
 @media (max-width: 860px) {
+  .section-heading-bottom {
+    display: block;
+  }
+
+  .section-heading-bottom > p {
+    max-width: none;
+    margin-top: 24px;
+  }
+
   .project-info {
     display: block;
     min-height: 0;
@@ -1770,7 +1771,7 @@ summary {
 
   .section-heading-bottom > p {
     margin-top: 24px;
-    max-width: 330px;
+    max-width: none;
   }
 
   .section-heading h2 {
@@ -1799,11 +1800,6 @@ summary {
     margin-top: 24px;
   }
 
-  .project-meta {
-    gap: 18px;
-    margin-bottom: 24px;
-    font-size: 10px;
-  }
 
   .project-stage {
     height: 390px;
@@ -1816,7 +1812,7 @@ summary {
   }
 
   .project-image {
-    width: 100%;
+    width: min(100%, calc(260px * 1672 / 940));
     max-height: 260px;
   }
 
@@ -2100,9 +2096,6 @@ summary {
   min-height: 0;
 }
 
-.project-meta {
-  flex-wrap: wrap;
-}
 
 .experience-section {
   padding-block: 20px 130px;
