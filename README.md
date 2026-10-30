@@ -8,15 +8,14 @@ Live site: https://ralph-portfolio-tau.vercel.app/
 
 - GraphiScan: an AI-assisted handwriting screening capstone in active development, led by Ralph as programmer on a three-person team. Screening outputs support expert review; they are not clinical diagnoses.
 - Odyssey: Solar System Explorer: a playable browser-based 3D exploration game using JavaScript, Three.js, and Vite. [Play Odyssey](https://odyssey-explorer-psi.vercel.app/).
-- ISKOL: a student productivity application using Next.js, React, TypeScript, Tailwind CSS, and Supabase; public preview in preparation.
 - Technical operations experience, education, skill explorer, and Cisco Networking Academy course certificates.
 - Downloadable supplied resume and contact form.
 
 ## Development
 
-Built with Nuxt 4, Vue 3, GSAP/ScrollTrigger, and custom CSS. Includes responsive layouts, light/dark themes, and reduced-motion support.
+Built with Nuxt 4, Vue 3, GSAP/ScrollTrigger, and custom CSS. Includes responsive layouts, a mobile hamburger menu, a 220 ms theme crossfade, and reduced-motion support. Project cards have concise summaries, repository/play links, and equal heights; mobile visitors can swipe between them or use the Previous/Next controls. The GitHub activity chart uses grayscale, starts at the latest months on narrow screens, and includes a failure fallback.
 
-The hero renders immediately without an entrance sequence. A brief branded loader waits for the active portrait and locally hosted Space Grotesk font, then fades out. Asset readiness has a 2.4-second deadline after initialization; an independent CSS fallback dismisses the overlay if scripts fail. Late fonts use a stable fallback for that visit. Font files and their SIL Open Font License live in `public/fonts/`.
+The hero renders immediately without an entrance sequence. A brief loader waits for the active portrait and locally hosted Space Grotesk and Bangers fonts, then fades out. Asset readiness has a 2.4-second deadline after initialization; an independent CSS fallback dismisses the overlay if scripts fail. Late fonts use a stable fallback for that visit. Font files and their SIL Open Font Licenses live in `public/fonts/`. Navigation and native contact-form submission remain available without JavaScript.
 
 ```bash
 npm install

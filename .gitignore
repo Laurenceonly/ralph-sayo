@@ -26,3 +26,7 @@ logs
 # Local browser verification artifacts
 .playwright-cli/
 output/playwright/
+
+# Local design-detector state
+.impeccable/hook.cache.json
+.impeccable/config.local.json

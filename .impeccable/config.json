@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "space grotesk",
+        "createdAt": "2026-10-30T04:02:49.844Z",
+        "reason": "Codex: intentionally retained the established secondary font while the user-selected Bangers hero remains the primary display treatment."
+      }
+    ]
+  }
+}

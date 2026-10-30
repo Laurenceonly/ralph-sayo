@@ -18,10 +18,37 @@ const themeReady = ref(false)
 const themeTransitioning = ref(false)
 const startupLoading = ref(true)
 const fontUnavailable = ref(false)
+const headlineFontUnavailable = ref(false)
 let startupTimer: ReturnType<typeof setTimeout> | undefined
 
 const currentYear = new Date().getFullYear()
 const email = 'ralphlaurencesayo@gmail.com'
+const contributionChartFailed = ref(false)
+const githubChartViewport = ref<HTMLElement | null>(null)
+let githubChartResizeObserver: ResizeObserver | undefined
+
+function showRecentGitHubActivity() {
+  const viewport = githubChartViewport.value
+  if (viewport) viewport.scrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth)
+}
+const mobileMenuOpen = ref(false)
+const mobileMenuToggle = ref<HTMLButtonElement | null>(null)
+
+function closeMobileMenu() {
+  mobileMenuOpen.value = false
+  mobileMenuToggle.value?.focus()
+}
+
+function dismissMobileMenu(event: PointerEvent) {
+  if (mobileMenuOpen.value && event.target instanceof Element && !event.target.closest('.site-header')) {
+    mobileMenuOpen.value = false
+  }
+}
+
+function handleHeaderFocusOut(event: FocusEvent) {
+  const header = event.currentTarget as HTMLElement
+  if (mobileMenuOpen.value && !header.contains(event.relatedTarget as Node | null)) mobileMenuOpen.value = false
+}
 
 /* ========================================
   SEO / FONTS / PRECONNECTS
@@ -68,8 +95,14 @@ useHead({
         'Full-stack and mobile developer showcasing the GraphiScan capstone project.',
     },
   ],
-  noscript: [{ innerHTML: '<style>.startup-loader { display: none !important; }</style>' }],
+  noscript: [{ innerHTML: `<style>
+    .startup-loader, .mobile-menu-toggle, .theme-toggle, .project-gallery-controls { display: none !important; }
+    .site-header { height: auto; min-height: 72px; padding-block: 8px; }
+    .site-header .main-nav { position: static; display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px 20px; padding: 0; border: 0; transform: none; visibility: visible; opacity: 1; pointer-events: auto; }
+  </style>` }],
   link: [
+    { rel: 'icon', href: 'data:,' },
+    { rel: 'preload', href: '/fonts/bangers-regular.ttf', as: 'font', type: 'font/ttf', crossorigin: '' },
     { rel: 'preconnect', href: 'https://cdn.jsdelivr.net' },
     {
       rel: 'preload',
@@ -82,7 +115,6 @@ useHead({
       rel: 'canonical',
       href: 'https://ralph-portfolio-tau.vercel.app',
     },
-    { rel: 'icon', type: 'image/png', sizes: '64x64', href: '/favicon.png?v=rl' },
   ],
 })
 
@@ -104,49 +136,26 @@ type TransitionDocument = Document & {
   }
 }
 
-async function toggleTheme(event: MouseEvent) {
+async function toggleTheme() {
   if (themeTransitioning.value) return
 
   const nextTheme = colorMode.value === 'dark' ? 'light' : 'dark'
-
   const updateTheme = async () => {
     colorMode.preference = nextTheme
     await nextTick()
   }
 
-  const reducedMotion = window.matchMedia(
-    '(prefers-reduced-motion: reduce)',
-  ).matches
-
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const doc = document as TransitionDocument
-
   if (!doc.startViewTransition || reducedMotion) {
     await updateTheme()
     return
   }
 
-  const button = event.currentTarget as HTMLElement
-  const rect = button.getBoundingClientRect()
-
-  const x = rect.left + rect.width / 2
-  const y = rect.top + rect.height / 2
-
-  const radius = Math.hypot(
-    Math.max(x, window.innerWidth - x),
-    Math.max(y, window.innerHeight - y),
-  )
-
-  doc.documentElement.style.setProperty('--theme-x', `${x}px`)
-  doc.documentElement.style.setProperty('--theme-y', `${y}px`)
-  doc.documentElement.style.setProperty('--theme-radius', `${radius}px`)
-
   themeTransitioning.value = true
-
   try {
     const transition = doc.startViewTransition(updateTheme)
-
     void transition.ready.catch(() => undefined)
-
     await transition.finished
   } catch {
     await updateTheme()
@@ -192,16 +201,45 @@ const additionalProjects = [
     repository: 'https://github.com/Laurenceonly/Odyssey-Space-Exploration-Game',
     liveUrl: 'https://odyssey-explorer-psi.vercel.app/',
   },
-  {
-    id: 'iskol',
-    title: 'ISKOL',
-    metadata: 'Student planner / Preview in preparation',
-    subtitle: 'Student life, in one workspace.',
-    description: 'Subjects, class schedules, and notes brought together in a student productivity application.',
-    stack: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS', 'Supabase'],
-    repository: 'https://github.com/Laurenceonly/Iskol',
-  },
 ]
+
+const projects = [
+  {
+    ...project,
+    liveUrl: undefined,
+    preview: {
+      src: project.image,
+      srcset: '/images/gscan1-640.webp 640w, /images/gscan1-960.webp 960w, /images/gscan1.webp 1672w',
+      alt: project.imageAlt,
+      width: 1672,
+      height: 940,
+    },
+  },
+  ...additionalProjects.map(item => ({ ...item, note: undefined })),
+]
+
+const projectGallery = ref<HTMLElement | null>(null)
+const activeProject = ref(0)
+function updateActiveProject() {
+  const gallery = projectGallery.value
+  const firstCard = gallery?.querySelector<HTMLElement>('.project-card')
+  if (!gallery || !firstCard) return
+  const step = firstCard.offsetWidth + parseFloat(getComputedStyle(gallery).columnGap || '0')
+  activeProject.value = Math.max(0, Math.min(projects.length - 1, Math.round(gallery.scrollLeft / step)))
+}
+
+function browseProjects(direction: number, animate = true) {
+  const gallery = projectGallery.value
+  if (!gallery) return
+  const nextIndex = Math.max(0, Math.min(projects.length - 1, activeProject.value + direction))
+  const cards = gallery.querySelectorAll<HTMLElement>('.project-card')
+  const target = cards[nextIndex]
+  const first = cards[0]
+  if (!target || !first) return
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  gallery.scrollTo({ left: target.offsetLeft - first.offsetLeft, behavior: animate && !reduceMotion ? 'smooth' : 'instant' })
+  activeProject.value = nextIndex
+}
 
 const skillGroups = [
   {
@@ -341,6 +379,7 @@ const techIconSlugs: Record<string, string> = {
 }
 
 function techIconUrl(tech: string) {
+  if (tech === 'VS Code') return 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vscode/vscode-plain.svg'
   const slug = techIconSlugs[tech]
   return slug ? `${techIconBase}/${slug}.svg` : null
 }
@@ -463,9 +502,13 @@ const socialLinks: SocialLink[] = [
 ]
 
 const emailCopied = ref(false)
+const emailCopyMessage = ref('')
 let emailCopyTimer: ReturnType<typeof setTimeout> | undefined
 
 async function copyEmail() {
+  clearTimeout(emailCopyTimer)
+  emailCopied.value = false
+  emailCopyMessage.value = ''
   try {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(email)
@@ -476,18 +519,25 @@ async function copyEmail() {
       temp.style.position = 'fixed'
       temp.style.opacity = '0'
       document.body.appendChild(temp)
-      temp.focus()
-      temp.select()
-      document.execCommand('copy')
-      document.body.removeChild(temp)
+      const previousFocus = document.activeElement as HTMLElement | null
+      try {
+        temp.focus()
+        temp.select()
+        if (!document.execCommand('copy')) throw new Error('Clipboard copy was unavailable')
+      } finally {
+        temp.remove()
+        previousFocus?.focus({ preventScroll: true })
+      }
     }
 
     emailCopied.value = true
-    clearTimeout(emailCopyTimer)
+    emailCopyMessage.value = 'Copied to clipboard'
     emailCopyTimer = setTimeout(() => {
       emailCopied.value = false
+      emailCopyMessage.value = ''
     }, 2200)
   } catch (error) {
+    emailCopyMessage.value = `Copy manually: ${email}`
     console.warn('Could not copy email to clipboard.', error)
   }
 }
@@ -552,38 +602,6 @@ async function submitContactForm() {
 }
 
 /* ========================================
-  POINTER-RESPONSIVE PROJECT IMAGES
-======================================== */
-
-let pointerQuery: MediaQueryList | undefined
-
-function movePreview(event: PointerEvent) {
-  if (!pointerQuery?.matches || event.pointerType === 'touch') return
-
-  const element = event.currentTarget as HTMLElement
-  const rect = element.getBoundingClientRect()
-
-  if (!rect.width || !rect.height) return
-
-  const x = (event.clientX - rect.left) / rect.width
-  const y = (event.clientY - rect.top) / rect.height
-
-  element.style.setProperty('--pointer-x', `${x * 100}%`)
-  element.style.setProperty('--pointer-y', `${y * 100}%`)
-  element.style.setProperty('--rotate-x', `${(0.5 - y) * 5}deg`)
-  element.style.setProperty('--rotate-y', `${(x - 0.5) * 7}deg`)
-}
-
-function resetPreview(event: PointerEvent) {
-  const element = event.currentTarget as HTMLElement
-
-  element.style.setProperty('--pointer-x', '50%')
-  element.style.setProperty('--pointer-y', '50%')
-  element.style.setProperty('--rotate-x', '0deg')
-  element.style.setProperty('--rotate-y', '0deg')
-}
-
-/* ========================================
   ANIMATION LIFECYCLE
 ======================================== */
 
@@ -612,7 +630,10 @@ async function prepareStartup() {
 
     // Wait only for the first screen; lower sections never delay entry.
     const assets: Promise<unknown>[] = []
-    if (document.fonts) assets.push(document.fonts.load('500 1em "Space Grotesk"'))
+    if (document.fonts) {
+      assets.push(document.fonts.load('500 1em "Space Grotesk"'))
+      assets.push(document.fonts.load('400 1em "Bangers"'))
+    }
     if (portrait) assets.push(portrait.decode())
 
     await Promise.race([
@@ -627,6 +648,7 @@ async function prepareStartup() {
       // If the font misses the deadline, keep the fallback for this visit.
       // A late font response must not shift text after the loader has gone.
       fontUnavailable.value = !document.fonts?.check('500 1em "Space Grotesk"')
+      headlineFontUnavailable.value = !document.fonts?.check('400 1em "Bangers"')
       await nextTick()
       if (!disposed) startupLoading.value = false
     }
@@ -639,13 +661,23 @@ function startMotionWhenEnabled() {
 
 onMounted(() => {
   themeReady.value = true
+  // An SSR image can fail before hydration attaches its error listener.
+  for (const item of projects) {
+    if (!item.preview) continue
+    const image = siteRoot.value?.querySelector<HTMLImageElement>(`#${item.id} .project-card-preview img`)
+    if (image?.complete && image.naturalWidth === 0) imageFailed(item.preview.src)
+  }
+  const contributionImage = siteRoot.value?.querySelector<HTMLImageElement>('.github-chart')
+  if (contributionImage?.complete && contributionImage.naturalWidth === 0) contributionChartFailed.value = true
+  if (githubChartViewport.value && !contributionChartFailed.value) {
+    githubChartResizeObserver = new ResizeObserver(showRecentGitHubActivity)
+    githubChartResizeObserver.observe(githubChartViewport.value)
+    showRecentGitHubActivity()
+  }
   void prepareStartup().catch(() => {
     if (!disposed) startupLoading.value = false
   })
 
-  pointerQuery = window.matchMedia(
-    '(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)',
-  )
 
   motionPreference = window.matchMedia('(prefers-reduced-motion: no-preference)')
   motionPreference.addEventListener('change', startMotionWhenEnabled)
@@ -707,36 +739,6 @@ async function initializeMotion() {
       })
     })
 
-    media.add(
-      '(min-width: 901px) and (prefers-reduced-motion: no-preference)',
-      () => {
-        select('.project-stage').forEach((stage) => {
-          const visual = stage.querySelector<HTMLElement>(
-            '.project-image-wrap',
-          )
-
-          if (!visual) return
-
-          gsap.fromTo(
-            visual,
-            {
-              yPercent: 4,
-            },
-            {
-              yPercent: -4,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: stage,
-                start: 'top bottom',
-                end: 'bottom top',
-                scrub: 0.8,
-              },
-            },
-          )
-        })
-      },
-    )
-
     refreshScroll()
 
     void document.fonts.ready.then(() => {
@@ -751,6 +753,7 @@ async function initializeMotion() {
 
 onBeforeUnmount(() => {
   disposed = true
+  githubChartResizeObserver?.disconnect()
   if (refreshFrame !== undefined) cancelAnimationFrame(refreshFrame)
   motionPreference?.removeEventListener('change', startMotionWhenEnabled)
   clearTimeout(startupTimer)
@@ -760,10 +763,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="siteRoot" class="site-shell" :class="{ 'font-fallback': fontUnavailable }">
+  <div ref="siteRoot" class="site-shell" :class="{ 'font-fallback': fontUnavailable, 'headline-font-fallback': headlineFontUnavailable }" @pointerdown="dismissMobileMenu">
     <Transition name="startup" type="transition">
       <div v-if="startupLoading" class="startup-loader" role="status" aria-live="polite">
-        <span class="startup-mark" aria-hidden="true">rl<span class="accent">.</span></span>
         <span class="startup-track" aria-hidden="true"></span>
         <span class="startup-label">Loading portfolio</span>
       </div>
@@ -778,21 +780,30 @@ onBeforeUnmount(() => {
         HEADER
     =================================== -->
 
-    <header class="site-header">
-      <a
-        class="wordmark"
-        href="#home"
-        aria-label="rl. — Ralph Laurence home"
-      >
-        rl<span>.</span>
-      </a>
+    <header class="site-header" @keydown.esc="closeMobileMenu" @focusout="handleHeaderFocusOut">
 
-      <nav class="main-nav" aria-label="Main navigation">
-        <a href="#work">Work</a>
-        <a href="#skills">Skills</a>
-        <a href="#experience">Experience</a>
-        <a href="#process">Process</a>
-        <a href="#contact">Contact</a>
+      <button
+        ref="mobileMenuToggle"
+        class="mobile-menu-toggle"
+        type="button"
+        :aria-expanded="mobileMenuOpen"
+        :aria-label="mobileMenuOpen ? 'Close navigation' : 'Open navigation'"
+        aria-controls="main-navigation"
+        @click="mobileMenuOpen = !mobileMenuOpen"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+          <path class="menu-line-top" d="M4 6h16" />
+          <path class="menu-line-middle" d="M4 12h16" />
+          <path class="menu-line-bottom" d="M4 18h16" />
+        </svg>
+      </button>
+
+      <nav id="main-navigation" class="main-nav" :class="{ 'is-open': mobileMenuOpen }" aria-label="Main navigation">
+        <a href="#work" @click="mobileMenuOpen = false">Work</a>
+        <a href="#skills" @click="mobileMenuOpen = false">Skills</a>
+        <a href="#experience" @click="mobileMenuOpen = false">Experience</a>
+        <a href="#process" @click="mobileMenuOpen = false">Process</a>
+        <a href="#contact" @click="mobileMenuOpen = false">Contact</a>
       </nav>
 
       <button
@@ -850,7 +861,6 @@ onBeforeUnmount(() => {
         class="hero page-width"
         aria-labelledby="hero-title"
       >
-        <div class="hero-orbit" aria-hidden="true"></div>
 
         <!--
           Hero portrait — two pre-rendered images swapped purely via CSS
@@ -860,15 +870,15 @@ onBeforeUnmount(() => {
           ralph1.webp = full color cutout  -> shown in LIGHT mode
           ralph2.webp = grayscale cutout   -> shown in DARK mode (default)
 
-          Purely decorative (the name is already announced via the h1's
-          aria-label below), so it's aria-hidden with empty alt text.
+          Purely decorative; the introduction below identifies Ralph,
+          so the portrait is aria-hidden with empty alt text.
         -->
         <div class="hero-portrait-wrap" aria-hidden="true">
           <img
             class="hero-portrait hero-portrait-mono"
             src="/images/ralph2.webp"
             srcset="/images/ralph2-480.webp 480w, /images/ralph2-768.webp 768w, /images/ralph2.webp 1000w"
-            sizes="(max-width: 400px) 62vw, (max-width: 720px) 56vw, (max-width: 1000px) 32vw, min(34vw, 440px)"
+            sizes="(max-width: 400px) min(62vw, 240px), (max-width: 720px) min(56vw, 300px), (max-width: 1000px) 32vw, min(34vw, 440px)"
             alt=""
             width="1000"
             height="1167"
@@ -881,7 +891,7 @@ onBeforeUnmount(() => {
             class="hero-portrait hero-portrait-color"
             src="/images/ralph1.webp"
             srcset="/images/ralph1-480.webp 480w, /images/ralph1-768.webp 768w, /images/ralph1.webp 1000w"
-            sizes="(max-width: 400px) 62vw, (max-width: 720px) 56vw, (max-width: 1000px) 32vw, min(34vw, 440px)"
+            sizes="(max-width: 400px) min(62vw, 240px), (max-width: 720px) min(56vw, 300px), (max-width: 1000px) 32vw, min(34vw, 440px)"
             alt=""
             width="1000"
             height="1167"
@@ -890,29 +900,30 @@ onBeforeUnmount(() => {
           />
         </div>
 
-        <p class="eyebrow hero-eyebrow">
-          <span class="status-dot" aria-hidden="true"></span>
-          Full-Stack Web &amp; Mobile Developer 
-        </p>
+        <div class="hero-heading">
+          <p class="eyebrow hero-eyebrow">
+            Full-Stack Web &amp; Mobile Developer
+          </p>
 
-        <h1
-          id="hero-title"
-          class="hero-title"
-          aria-label="Ralph Laurence Sayo"
-        >
-          <span class="hero-line" aria-hidden="true">
-            <span>RALPH</span>
-          </span>
-
-          <span
-            class="hero-line second-line"
-            aria-hidden="true"
+          <h1
+            id="hero-title"
+            class="hero-title"
+            aria-label="Nah, I’d build"
           >
-            <span>
-              LAURENCE<span class="accent">.</span>
+            <span class="hero-line" aria-hidden="true">
+              <span>Nah,</span>
             </span>
-          </span>
-        </h1>
+
+            <span
+              class="hero-line second-line"
+              aria-hidden="true"
+            >
+              <span>
+                I’d build
+              </span>
+            </span>
+          </h1>
+        </div>
 
         <div class="hero-bottom">
           <div class="hero-lede">
@@ -930,11 +941,9 @@ onBeforeUnmount(() => {
             <div class="hero-actions">
             <a class="text-link" href="#work">
               Explore my work
-              <span aria-hidden="true">↗</span>
             </a>
             <a class="text-link" href="/resume/Ralph_Laurence_Sayo_Resume.pdf" download>
-              Download resume (PDF)
-              <span aria-hidden="true">↗</span>
+              Download resume
             </a>
             </div>
           </div>
@@ -955,7 +964,7 @@ onBeforeUnmount(() => {
 
           <div class="section-heading-bottom">
             <h2 id="work-title">
-              Learning.<br />
+              Learning.
               <span class="muted">Made tangible.</span>
             </h2>
 
@@ -966,177 +975,30 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <article
-          :id="project.id"
-          class="project-row"
-          :aria-labelledby="`${project.id}-title`"
-          data-reveal
+        <div
+          id="project-gallery"
+          ref="projectGallery"
+          class="project-grid"
+          tabindex="0"
+          role="region"
+          aria-label="Project gallery"
+          @scroll.passive="updateActiveProject"
+          @keydown.left.self.prevent="browseProjects(-1, false)"
+          @keydown.right.self.prevent="browseProjects(1, false)"
         >
-          <div class="project-info">
-            <p class="project-meta eyebrow">{{ project.metadata }}</p>
-
-            <div class="project-heading">
-              <h3 :id="`${project.id}-title`">
-                {{ project.title }}
-              </h3>
-
-              <p class="project-subtitle">
-                {{ project.subtitle }}
-              </p>
-            </div>
-
-            <div class="project-copy">
-              <p class="project-description">
-                {{ project.description }}
-              </p>
-
-              <ul
-                class="tech-list skill-tokens"
-                :aria-label="`${project.title} technologies`"
-              >
-                <li
-                  v-for="tech in project.stack"
-                  :key="tech"
-                >
-                  <span
-                    v-if="techIconUrl(tech)"
-                    class="token-icon"
-                    :style="{ '--tech-icon': `url('${techIconUrl(tech)}')` }"
-                    aria-hidden="true"
-                  />
-                  <span v-else class="token-icon token-icon-initial" aria-hidden="true">
-                    {{ techInitials(tech) }}
-                  </span>
-
-                  {{ tech }}
-                </li>
-              </ul>
-
-              <p
-                v-if="project.note"
-                class="project-note"
-              >
-                {{ project.note }}
-              </p>
-              <a class="text-link" :href="project.repository" target="_blank" rel="noopener noreferrer">
-                View GraphiScan on GitHub
-                <span aria-hidden="true">↗</span>
-              </a>
-            </div>
-          </div>
-
-          <div
-            class="project-stage"
-            @pointermove="movePreview"
-            @pointerleave="resetPreview"
-            @pointercancel="resetPreview"
+          <article
+            v-for="item in projects"
+            :id="item.id"
+            :key="item.id"
+            class="project-card"
+            :aria-labelledby="item.id + '-title'"
           >
-            <div class="stage-grid" aria-hidden="true"></div>
-            <div class="stage-halo" aria-hidden="true"></div>
-
-            <div
-              class="project-image-wrap"
-              role="region"
-              :aria-label="`${project.title} screenshot`"
-            >
+            <div class="project-card-preview">
               <img
-                v-if="!failedImages[project.image]"
-                class="project-image"
-                :src="project.image"
-                srcset="/images/gscan1-640.webp 640w, /images/gscan1-960.webp 960w, /images/gscan1.webp 1672w"
-                sizes="(max-width: 720px) min(calc(100vw - 78px), 463px), (max-width: 1000px) min(calc(86vw - 117px), 783px), min(calc(86vw - 138px), 783px)"
-                :alt="project.imageAlt"
-                width="1672"
-                height="940"
-                loading="lazy"
-                fetchpriority="auto"
-                decoding="async"
-                @load="refreshScroll"
-                @error="imageFailed(project.image)"
-              />
-
-              <div v-else class="image-placeholder">
-                <span
-                  class="placeholder-symbol"
-                  aria-hidden="true"
-                >
-                  ↗
-                </span>
-
-                <span class="placeholder-title">
-                  {{ project.title }}
-                </span>
-
-                <span class="mono">
-                  SCREENSHOT UNAVAILABLE
-                </span>
-              </div>
-            </div>
-
-          </div>
-        </article>
-
-        <article
-          v-for="item in additionalProjects"
-          :id="item.id"
-          :key="item.id"
-          class="project-row additional-project"
-          :aria-labelledby="`${item.id}-title`"
-          data-reveal
-        >
-          <div class="project-info">
-            <p class="project-meta eyebrow">{{ item.metadata }}</p>
-            <div class="project-heading">
-              <h3 :id="`${item.id}-title`">{{ item.title }}</h3>
-              <p class="project-subtitle">{{ item.subtitle }}</p>
-            </div>
-            <div class="project-copy">
-              <p class="project-description">{{ item.description }}</p>
-              <ul class="tech-list skill-tokens" :aria-label="`${item.title} technologies`">
-                <li v-for="tech in item.stack" :key="tech">
-                  <span
-                    v-if="techIconUrl(tech)"
-                    class="token-icon"
-                    :style="{ '--tech-icon': `url('${techIconUrl(tech)}')` }"
-                    aria-hidden="true"
-                  />
-                  <span v-else class="token-icon token-icon-initial" aria-hidden="true">
-                    {{ techInitials(tech) }}
-                  </span>
-                  {{ tech }}
-                </li>
-              </ul>
-              <a v-if="item.liveUrl" class="text-link" :href="item.liveUrl" target="_blank" rel="noopener noreferrer">
-                Play {{ item.title }}
-                <span aria-hidden="true">↗</span>
-              </a>
-              <a class="text-link" :href="item.repository" target="_blank" rel="noopener noreferrer">
-                View {{ item.title }} on GitHub
-                <span aria-hidden="true">↗</span>
-              </a>
-            </div>
-          </div>
-
-          <div
-            v-if="item.preview"
-            class="project-stage"
-            @pointermove="movePreview"
-            @pointerleave="resetPreview"
-            @pointercancel="resetPreview"
-          >
-            <div class="stage-grid" aria-hidden="true"></div>
-            <div class="stage-halo" aria-hidden="true"></div>
-            <div
-              class="project-image-wrap"
-              role="region"
-              :aria-label="`${item.title} screenshot`"
-            >
-              <img
-                v-if="!failedImages[item.preview.src]"
-                class="project-image"
+                v-if="item.preview && !failedImages[item.preview.src]"
                 :src="item.preview.src"
                 :srcset="item.preview.srcset"
-                sizes="(max-width: 720px) min(calc(100vw - 78px), 463px), (max-width: 1000px) min(calc(86vw - 117px), 783px), min(calc(86vw - 138px), 783px)"
+                sizes="(max-width: 899px) min(400px, calc(100vw - 88px)), min(440px, calc((100vw - 142px) / 2))"
                 :alt="item.preview.alt"
                 :width="item.preview.width"
                 :height="item.preview.height"
@@ -1145,13 +1007,36 @@ onBeforeUnmount(() => {
                 @load="refreshScroll"
                 @error="imageFailed(item.preview.src)"
               />
-              <div v-else class="image-placeholder">
-                <span class="placeholder-title">{{ item.title }}</span>
-                <span class="mono">SCREENSHOT UNAVAILABLE</span>
+              <div v-else class="project-card-placeholder">
+                <span class="project-placeholder-name">{{ item.title }}</span>
+                <span>{{ item.preview ? 'Screenshot unavailable' : 'Preview in preparation' }}</span>
               </div>
             </div>
+            <div class="project-card-body">
+              <p class="project-card-meta">{{ item.metadata }}</p>
+              <h3 :id="item.id + '-title'">
+                <a class="project-card-primary" :href="item.liveUrl || item.repository" target="_blank" rel="noopener noreferrer" :aria-label="item.liveUrl ? 'Play ' + item.title : 'Explore ' + item.title + ' on GitHub'">{{ item.title }}</a>
+              </h3>
+              <p class="project-card-subtitle">{{ item.subtitle }}</p>
+              <div class="project-card-links">
+                <a v-if="item.liveUrl" :href="item.liveUrl" target="_blank" rel="noopener noreferrer" :aria-label="'Play ' + item.title">
+                  Play
+                </a>
+                <a :href="item.repository" target="_blank" rel="noopener noreferrer" :aria-label="'View GitHub source for ' + item.title">
+                  View GitHub
+                </a>
+              </div>
+            </div>
+          </article>
+        </div>
+        <div class="project-gallery-controls">
+          <p role="status" aria-live="polite" aria-atomic="true">{{ activeProject + 1 }} / {{ projects.length }} <span>{{ projects[activeProject]?.title }}</span></p>
+          <div class="project-gallery-buttons">
+            <button type="button" aria-controls="project-gallery" :disabled="activeProject === 0" @click="browseProjects(-1)">Previous</button>
+            <button type="button" aria-controls="project-gallery" :disabled="activeProject === projects.length - 1" @click="browseProjects(1)">Next</button>
           </div>
-        </article>
+        </div>
+
       </section>
 
       <!-- ==================================
@@ -1204,13 +1089,6 @@ onBeforeUnmount(() => {
               <span>
                 {{ group.title }}
               </span>
-
-              <span
-                class="skill-option-arrow"
-                aria-hidden="true"
-              >
-                ↗
-              </span>
             </button>
           </div>
 
@@ -1255,6 +1133,8 @@ onBeforeUnmount(() => {
                   <li
                     v-for="(skill, index) in group.skills"
                     :key="skill"
+                    :aria-label="skill"
+                    :title="skill"
                     :style="{ '--token-index': index }"
                   >
                     <span
@@ -1267,7 +1147,7 @@ onBeforeUnmount(() => {
                       {{ techInitials(skill) }}
                     </span>
 
-                    {{ skill }}
+                    <span class="tech-label">{{ skill }}</span>
                   </li>
                 </ul>
               </div>
@@ -1418,6 +1298,22 @@ onBeforeUnmount(() => {
           CONTACT
       =================================== -->
 
+      <section class="github-section page-width" aria-labelledby="github-title">
+        <div class="github-panel">
+          <div class="github-panel-heading">
+            <div>
+              <h2 id="github-title">GitHub activity</h2>
+              <p class="github-description">A snapshot of my public contributions over the past year.</p>
+            </div>
+            <a class="github-profile-link" href="https://github.com/Laurenceonly" target="_blank" rel="noopener noreferrer">@Laurenceonly</a>
+          </div>
+          <div v-if="!contributionChartFailed" ref="githubChartViewport" class="github-chart-wrap" tabindex="0" role="region" aria-label="GitHub contributions, latest months first; scroll horizontally to view the full year">
+            <img class="github-chart" src="https://ghchart.rshah.org/111111/Laurenceonly" alt="GitHub contribution activity for Laurenceonly over the past year" width="663" height="104" loading="lazy" @load="showRecentGitHubActivity" @error="contributionChartFailed = true" />
+          </div>
+          <p v-else class="github-chart-fallback">The contribution chart is unavailable right now. Visit my GitHub profile to see my activity.</p>
+        </div>
+      </section>
+
       <section
         id="contact"
         class="contact-section page-width"
@@ -1433,20 +1329,14 @@ onBeforeUnmount(() => {
 
             <span class="contact-last-line">
               <span class="muted">in mind?</span>
-
-              <a
-                class="contact-arrow"
-                :href="`mailto:${email}`"
-                aria-label="Email Ralph"
-              >
-                <span aria-hidden="true">↗</span>
-              </a>
             </span>
           </h2>
 
           <div class="contact-columns">
             <form
               class="contact-form"
+              :action="FORMSPREE_ENDPOINT"
+              method="post"
               @submit.prevent="submitContactForm"
             >
               <p class="mono muted contact-form-label">
@@ -1569,11 +1459,11 @@ onBeforeUnmount(() => {
 
                 <p
                   class="copy-feedback mono"
-                  :class="{ 'is-visible': emailCopied }"
+                  :class="{ 'is-visible': emailCopyMessage }"
                   role="status"
                   aria-live="polite"
                 >
-                  {{ emailCopied ? 'Copied to clipboard' : '' }}
+                  {{ emailCopyMessage }}
                 </p>
               </div>
 
