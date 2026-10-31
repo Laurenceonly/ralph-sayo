@@ -126,42 +126,10 @@ const themeLabel = computed(() => {
     : 'Switch to dark theme'
 })
 
-type TransitionDocument = Document & {
-  startViewTransition?: (
-    callback: () => Promise<void>,
-  ) => {
-    finished: Promise<void>
-    ready: Promise<void>
-    updateCallbackDone: Promise<void>
-  }
-}
-
 async function toggleTheme() {
   if (themeTransitioning.value) return
-
-  const nextTheme = colorMode.value === 'dark' ? 'light' : 'dark'
-  const updateTheme = async () => {
-    colorMode.preference = nextTheme
-    await nextTick()
-  }
-
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const doc = document as TransitionDocument
-  if (!doc.startViewTransition || reducedMotion) {
-    await updateTheme()
-    return
-  }
-
-  themeTransitioning.value = true
-  try {
-    const transition = doc.startViewTransition(updateTheme)
-    void transition.ready.catch(() => undefined)
-    await transition.finished
-  } catch {
-    await updateTheme()
-  } finally {
-    themeTransitioning.value = false
-  }
+  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+  await nextTick()
 }
 
 /* ========================================
@@ -171,7 +139,7 @@ async function toggleTheme() {
 const project = {
   id: 'graphiscan',
   title: 'GraphiScan',
-  metadata: 'Capstone project / In development',
+  metadata: 'Capstone project',
   subtitle: 'Screening dysgraphia through handwriting analysis.',
   description:
     'Lead programmer for a three-person capstone team developing CNN-based handwriting screening, student records, and evaluator access across web and mobile interfaces.',
@@ -194,7 +162,7 @@ const additionalProjects = [
       width: 1672,
       height: 842,
     },
-    metadata: 'Space exploration game / Playable',
+    metadata: 'Space exploration game',
     subtitle: 'A solar system to explore.',
     description: 'A playable browser-based space exploration game with guided discovery and interactive field guides.',
     stack: ['JavaScript', 'Three.js', 'Vite'],
@@ -206,7 +174,7 @@ const additionalProjects = [
 const projects = [
   {
     ...project,
-    liveUrl: undefined,
+    liveUrl: 'https://graphiscan.vercel.app/',
     preview: {
       src: project.image,
       srcset: '/images/gscan1-640.webp 640w, /images/gscan1-960.webp 960w, /images/gscan1.webp 1672w',
@@ -232,6 +200,10 @@ function browseProjects(direction: number, animate = true) {
   const gallery = projectGallery.value
   if (!gallery) return
   const nextIndex = Math.max(0, Math.min(projects.length - 1, activeProject.value + direction))
+  if (window.matchMedia('(min-width: 900px)').matches) {
+    activeProject.value = nextIndex
+    return
+  }
   const cards = gallery.querySelectorAll<HTMLElement>('.project-card')
   const target = cards[nextIndex]
   const first = cards[0]
@@ -290,7 +262,6 @@ const skillGroups = [
     description: 'The tools behind the development process.',
     skills: [
       'Java',
-      'C++',
       'Git',
       'GitHub',
       'VS Code',
@@ -302,6 +273,20 @@ const skillGroups = [
     ],
   },
 ]
+
+const allSkills = [...new Set(skillGroups.flatMap(group => group.skills))]
+const skillColors: Record<string, string> = {
+  HTML: '#e34f26', CSS: '#1572b6', JavaScript: '#d6b800', TypeScript: '#3178c6',
+  Bootstrap: '#7952b3', 'Tailwind CSS': '#06b6d4', 'Three.js': 'var(--text)', GSAP: '#88ce02',
+  Vite: '#a66bff', Vue: '#42b883', Nuxt: '#00b97d', React: '#27a9c6', 'Next.js': 'var(--text)',
+  PHP: '#8993be', Laravel: '#ff2d20', 'Node.js': '#5fa04e', MySQL: '#1685a9',
+  PostgreSQL: '#487ca8', MongoDB: '#47a248', Supabase: '#3ecf8e', Flutter: '#42a5f5',
+  'React Native': '#27a9c6', Capacitor: '#53b9ff', Dart: '#0175c2', Firebase: '#f5a800',
+  Python: '#4b8bbe', Flask: 'var(--text)', PyTorch: '#ee4c2c', Keras: '#d00000',
+  OpenCV: '#df5656', TensorFlow: '#ff8f00', Java: '#e07628',
+  Git: '#f05032', GitHub: 'var(--text)', 'VS Code': '#168bd2', Docker: '#2496ed',
+  Postman: '#ff6c37', Figma: '#a66bff', Vercel: 'var(--text)', 'Cisco Networking': '#049fd9',
+}
 
 /* ========================================
   CERTIFICATIONS
@@ -370,7 +355,6 @@ const techIconSlugs: Record<string, string> = {
   // Oracle doesn't license the Java coffee-cup mark for open reuse,
   // so this uses OpenJDK's Duke mark instead — the accepted open substitute.
   Java: 'openjdk',
-  'C++': 'cplusplus',
   Git: 'git',
   GitHub: 'github',
   Postman: 'postman',
@@ -388,6 +372,21 @@ function techInitials(tech: string) {
   return tech.replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase()
 }
 
+const brandIcons: Record<string, string> = {
+  HTML: 'html5', CSS: 'css3', JavaScript: 'javascript', TypeScript: 'typescript', Bootstrap: 'bootstrap',
+  'Tailwind CSS': 'tailwindcss', Vite: 'vitejs', Vue: 'vuejs', Nuxt: 'nuxtjs', React: 'react',
+  PHP: 'php', Laravel: 'laravel', 'Node.js': 'nodejs', MySQL: 'mysql', PostgreSQL: 'postgresql',
+  MongoDB: 'mongodb', Supabase: 'supabase', Flutter: 'flutter', 'React Native': 'react', Dart: 'dart',
+  Firebase: 'firebase', Python: 'python', PyTorch: 'pytorch', Keras: 'keras', OpenCV: 'opencv',
+  TensorFlow: 'tensorflow', Java: 'java', Git: 'git', 'VS Code': 'vscode',
+  Docker: 'docker', Postman: 'postman', Figma: 'figma',
+}
+const brokenBrandIcons = ref<Record<string, boolean>>({})
+function brandIconUrl(tech: string) {
+  const slug = brandIcons[tech]
+  return slug && !brokenBrandIcons.value[tech] ? `https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/${slug}/${slug}-original.svg` : null
+}
+
 /* ========================================
   IMAGE FALLBACKS
 ======================================== */
@@ -401,53 +400,6 @@ function imageFailed(src: string) {
     refreshScroll()
   })
 }
-
-/* ========================================
-  PROCESS
-======================================== */
-
-const processSteps = [
-  {
-    title: 'Understand',
-    description:
-      'Every project starts with the problem, not the code. I dig into what\u2019s actually needed \u2014 the requirements, the constraints, who it\u2019s for \u2014 before deciding how to solve it.',
-  },
-  {
-    title: 'Design',
-    description:
-      'Once the problem is clear, I visualize the solution: sketching flows and mocking up interfaces before writing a single line of code.',
-  },
-  {
-    title: 'Develop',
-    description:
-      'The design becomes real. I build out the core features first, focused on getting the fundamentals working before anything else.',
-  },
-  {
-    title: 'Improve',
-    description:
-      'With a working version in hand, I go back through it \u2014 cleaning up rough edges and refining the parts that matter most to the user.',
-  },
-  {
-    title: 'Test',
-    description:
-      'I put the project through its paces: checking edge cases, fixing what breaks, and making sure it actually does what it was built to do.',
-  },
-  {
-    title: 'Deploy',
-    description:
-      'Finally, I ship it \u2014 a live demo, a packaged app, or a presentation \u2014 and treat feedback from that point as the start of the next iteration.',
-  },
-]
-
-/* ========================================
-  SKILL EXPLORER
-======================================== */
-
-const selectedSkill = ref(0)
-
-const activeSkillGroup = computed(
-  () => skillGroups[selectedSkill.value]!,
-)
 
 /* ========================================
   SOCIAL / CONTACT LINKS
@@ -625,7 +577,7 @@ async function prepareStartup() {
     await nextTick()
 
     const portrait = siteRoot.value?.querySelector<HTMLImageElement>(
-      colorMode.value === 'light' ? '.hero-portrait-color' : '.hero-portrait-mono',
+      '.hero-portrait',
     )
 
     // Wait only for the first screen; lower sections never delay entry.
@@ -713,17 +665,6 @@ async function initializeMotion() {
 
     media.add('(prefers-reduced-motion: no-preference)', () => {
       // The hero is visible in the server-rendered page and stays visible.
-      gsap.to(select('.reading-progress'), {
-        scaleX: 1,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: root,
-          start: 'top top',
-          end: 'bottom bottom',
-          scrub: true,
-        },
-      })
-
       select('[data-reveal]').forEach((element) => {
         gsap.from(element, {
           y: 32,
@@ -770,7 +711,6 @@ onBeforeUnmount(() => {
         <span class="startup-label">Loading portfolio</span>
       </div>
     </Transition>
-    <div class="reading-progress" aria-hidden="true"></div>
 
     <a class="skip-link" href="#main">
       Skip to content
@@ -780,33 +720,58 @@ onBeforeUnmount(() => {
         HEADER
     =================================== -->
 
-    <header class="site-header" @keydown.esc="closeMobileMenu" @focusout="handleHeaderFocusOut">
 
-      <button
-        ref="mobileMenuToggle"
-        class="mobile-menu-toggle"
-        type="button"
-        :aria-expanded="mobileMenuOpen"
-        :aria-label="mobileMenuOpen ? 'Close navigation' : 'Open navigation'"
-        aria-controls="main-navigation"
-        @click="mobileMenuOpen = !mobileMenuOpen"
+
+    <main id="main" tabindex="-1">
+      <!-- ==================================
+          HERO
+      =================================== -->
+
+      <section
+        id="home"
+        class="hero page-width"
+        aria-label="Introduction"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
-          <path class="menu-line-top" d="M4 6h16" />
-          <path class="menu-line-middle" d="M4 12h16" />
-          <path class="menu-line-bottom" d="M4 18h16" />
-        </svg>
-      </button>
 
-      <nav id="main-navigation" class="main-nav" :class="{ 'is-open': mobileMenuOpen }" aria-label="Main navigation">
-        <a href="#work" @click="mobileMenuOpen = false">Work</a>
-        <a href="#skills" @click="mobileMenuOpen = false">Skills</a>
-        <a href="#experience" @click="mobileMenuOpen = false">Experience</a>
-        <a href="#process" @click="mobileMenuOpen = false">Process</a>
-        <a href="#contact" @click="mobileMenuOpen = false">Contact</a>
-      </nav>
+        <!--
+          The same color portrait stays visible across both themes.
 
-      <button
+          Purely decorative; the introduction below identifies Ralph,
+          so the portrait is aria-hidden with empty alt text.
+        -->
+        <div class="hero-visual">
+        <div class="hero-portrait-wrap" aria-hidden="true">
+          <img
+            class="hero-portrait"
+            :src="'/images/ralph1.webp'"
+            :srcset="'/images/ralph1-480.webp 480w, /images/ralph1-768.webp 768w, /images/ralph1.webp 1000w'"
+            sizes="(max-width: 400px) min(62vw, 240px), (max-width: 720px) min(56vw, 300px), (max-width: 1000px) 32vw, min(34vw, 440px)"
+            alt=""
+            width="1000"
+            height="1167"
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+          />
+        </div>
+
+        </div>
+        <div class="hero-bottom">
+          <div class="hero-intro">
+            <h1 class="hero-name">Ralph Laurence Sayo</h1>
+            <p class="hero-role">Full-Stack Web &amp; Mobile Developer</p>
+            <p>
+              BS Information Technology student at Davao del Norte State College.
+            </p>
+
+            <div class="hero-actions">
+            <a class="text-link" href="#work">
+              Explore my work
+            </a>
+            <a class="text-link" href="/resume/Ralph_Laurence_Sayo_Resume.pdf" download>
+              Download resume
+            </a>
+<button
         class="theme-toggle"
         type="button"
         role="switch"
@@ -849,102 +814,6 @@ onBeforeUnmount(() => {
           </svg>
         </span>
       </button>
-    </header>
-
-    <main id="main" tabindex="-1">
-      <!-- ==================================
-          HERO
-      =================================== -->
-
-      <section
-        id="home"
-        class="hero page-width"
-        aria-labelledby="hero-title"
-      >
-
-        <!--
-          Hero portrait — two pre-rendered images swapped purely via CSS
-          opacity based on the existing `.light` root class (no JS/watchers
-          needed, same pattern as every other themed element on the site).
-
-          ralph1.webp = full color cutout  -> shown in LIGHT mode
-          ralph2.webp = grayscale cutout   -> shown in DARK mode (default)
-
-          Purely decorative; the introduction below identifies Ralph,
-          so the portrait is aria-hidden with empty alt text.
-        -->
-        <div class="hero-portrait-wrap" aria-hidden="true">
-          <img
-            class="hero-portrait hero-portrait-mono"
-            src="/images/ralph2.webp"
-            srcset="/images/ralph2-480.webp 480w, /images/ralph2-768.webp 768w, /images/ralph2.webp 1000w"
-            sizes="(max-width: 400px) min(62vw, 240px), (max-width: 720px) min(56vw, 300px), (max-width: 1000px) 32vw, min(34vw, 440px)"
-            alt=""
-            width="1000"
-            height="1167"
-            loading="eager"
-            fetchpriority="high"
-            decoding="async"
-          />
-
-          <img
-            class="hero-portrait hero-portrait-color"
-            src="/images/ralph1.webp"
-            srcset="/images/ralph1-480.webp 480w, /images/ralph1-768.webp 768w, /images/ralph1.webp 1000w"
-            sizes="(max-width: 400px) min(62vw, 240px), (max-width: 720px) min(56vw, 300px), (max-width: 1000px) 32vw, min(34vw, 440px)"
-            alt=""
-            width="1000"
-            height="1167"
-            loading="eager"
-            decoding="async"
-          />
-        </div>
-
-        <div class="hero-heading">
-          <p class="eyebrow hero-eyebrow">
-            Full-Stack Web &amp; Mobile Developer
-          </p>
-
-          <h1
-            id="hero-title"
-            class="hero-title"
-            aria-label="Nah, I’d build"
-          >
-            <span class="hero-line" aria-hidden="true">
-              <span>Nah,</span>
-            </span>
-
-            <span
-              class="hero-line second-line"
-              aria-hidden="true"
-            >
-              <span>
-                I’d build
-              </span>
-            </span>
-          </h1>
-        </div>
-
-        <div class="hero-bottom">
-          <div class="hero-lede">
-            <p class="hero-statement">
-              Curious by nature.<br />
-              <span>Building with purpose.</span>
-            </p>
-          </div>
-
-          <div class="hero-intro">
-            <p>
-              I'm Ralph Laurence Sayo, a BS Information Technology student.
-            </p>
-
-            <div class="hero-actions">
-            <a class="text-link" href="#work">
-              Explore my work
-            </a>
-            <a class="text-link" href="/resume/Ralph_Laurence_Sayo_Resume.pdf" download>
-              Download resume
-            </a>
             </div>
           </div>
         </div>
@@ -960,17 +829,13 @@ onBeforeUnmount(() => {
         aria-labelledby="work-title"
       >
         <div class="section-heading" data-reveal>
-          <p class="eyebrow">01 / SELECTED WORK</p>
-
           <div class="section-heading-bottom">
             <h2 id="work-title">
-              Learning.
-              <span class="muted">Made tangible.</span>
+              Selected projects.
             </h2>
 
             <p>
-              Projects across machine learning, interactive 3D,
-              and everyday web applications.
+              Work spanning handwriting screening and interactive 3D exploration.
             </p>
           </div>
         </div>
@@ -1015,12 +880,12 @@ onBeforeUnmount(() => {
             <div class="project-card-body">
               <p class="project-card-meta">{{ item.metadata }}</p>
               <h3 :id="item.id + '-title'">
-                <a class="project-card-primary" :href="item.liveUrl || item.repository" target="_blank" rel="noopener noreferrer" :aria-label="item.liveUrl ? 'Play ' + item.title : 'Explore ' + item.title + ' on GitHub'">{{ item.title }}</a>
+                {{ item.title }}
               </h3>
               <p class="project-card-subtitle">{{ item.subtitle }}</p>
               <div class="project-card-links">
-                <a v-if="item.liveUrl" :href="item.liveUrl" target="_blank" rel="noopener noreferrer" :aria-label="'Play ' + item.title">
-                  Play
+                <a v-if="item.liveUrl" :href="item.liveUrl" target="_blank" rel="noopener noreferrer" :aria-label="item.id === 'odyssey' ? 'Play ' + item.title : 'Visit ' + item.title">
+                  {{ item.id === 'odyssey' ? 'Play' : 'Visit site' }}
                 </a>
                 <a :href="item.repository" target="_blank" rel="noopener noreferrer" :aria-label="'View GitHub source for ' + item.title">
                   View GitHub
@@ -1030,7 +895,7 @@ onBeforeUnmount(() => {
           </article>
         </div>
         <div class="project-gallery-controls">
-          <p role="status" aria-live="polite" aria-atomic="true">{{ activeProject + 1 }} / {{ projects.length }} <span>{{ projects[activeProject]?.title }}</span></p>
+          <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">{{ projects[activeProject]?.title }}</span>
           <div class="project-gallery-buttons">
             <button type="button" aria-controls="project-gallery" :disabled="activeProject === 0" @click="browseProjects(-1)">Previous</button>
             <button type="button" aria-controls="project-gallery" :disabled="activeProject === projects.length - 1" @click="browseProjects(1)">Next</button>
@@ -1049,112 +914,22 @@ onBeforeUnmount(() => {
         aria-labelledby="skills-title"
       >
         <div class="section-heading" data-reveal>
-          <p class="eyebrow">02 / SKILLS &amp; CERTIFICATIONS</p>
-
           <div class="section-heading-bottom">
-            <h2 id="skills-title">
-              What I bring<br />
-              <span class="muted">to the table.</span>
-            </h2>
-
-            <p>
-              Core toolkit across web, mobile, and AI — backed by
-              certifications along the way.
-            </p>
+            <h2 id="skills-title">Skills &amp; certifications.</h2>
+            <p>Core toolkit across web, mobile, and AI — backed by certifications along the way.</p>
           </div>
         </div>
 
-        <!-- Interactive skill explorer -->
-
-        <div class="skill-explorer" data-reveal>
-          <div class="skill-menu">
-            <p class="eyebrow muted">
-              MY TOOLKIT
-            </p>
-
-            <button
-              v-for="(group, index) in skillGroups"
-              :key="group.title"
-              type="button"
-              class="skill-option"
-              :class="{ 'is-active': selectedSkill === index }"
-              :aria-pressed="selectedSkill === index"
-              aria-controls="skill-panel"
-              @click="selectedSkill = index"
-            >
-              <span class="mono">
-                {{ String(index + 1).padStart(2, '0') }}
-              </span>
-
-              <span>
-                {{ group.title }}
-              </span>
-            </button>
-          </div>
-
-          <div
-            id="skill-panel"
-            class="skill-panel"
-            role="region"
-            aria-live="polite"
-            :aria-label="activeSkillGroup.title"
-          >
-              <div
-                v-for="(group, groupIndex) in skillGroups"
-                :key="group.title"
-                class="skill-panel-content"
-                :class="{ 'is-active': selectedSkill === groupIndex }"
-                :aria-hidden="selectedSkill !== groupIndex"
-                :inert="selectedSkill !== groupIndex"
-              >
-                <span
-                  class="skill-watermark"
-                  aria-hidden="true"
-                >
-                  {{ String(groupIndex + 1).padStart(2, '0') }}
-                </span>
-
-                <p class="eyebrow">
-                  CAPABILITIES / TOOLKIT
-                </p>
-
-                <h3>
-                  {{ group.title }}
-                </h3>
-
-                <p class="skill-description">
-                  {{ group.description }}
-                </p>
-
-                <ul
-                  class="skill-tokens"
-                  :aria-label="group.title"
-                >
-                  <li
-                    v-for="(skill, index) in group.skills"
-                    :key="skill"
-                    :aria-label="skill"
-                    :title="skill"
-                    :style="{ '--token-index': index }"
-                  >
-                    <span
-                      v-if="techIconUrl(skill)"
-                      class="token-icon"
-                      :style="{ '--tech-icon': `url('${techIconUrl(skill)}')` }"
-                      aria-hidden="true"
-                    />
-                    <span v-else class="token-icon token-icon-initial" aria-hidden="true">
-                      {{ techInitials(skill) }}
-                    </span>
-
-                    <span class="tech-label">{{ skill }}</span>
-                  </li>
-                </ul>
-              </div>
-
-          </div>
-        </div>
-
+        <ul class="toolkit-grid" aria-label="Technologies and tools" data-reveal>
+          <li v-for="skill in allSkills" :key="skill" class="toolkit-item" :class="{ 'toolkit-monochrome': ['GitHub', 'Vercel', 'Next.js', 'Three.js', 'Flask'].includes(skill) }">
+            <div class="toolkit-button">
+              <img v-if="brandIconUrl(skill)" class="toolkit-brand" :src="brandIconUrl(skill)!" alt="" loading="lazy" @error="brokenBrandIcons[skill] = true" />
+              <span v-else-if="techIconUrl(skill)" class="token-icon toolkit-icon" :style="{ '--tech-icon': `url('${techIconUrl(skill)}')`, '--skill-color': skillColors[skill] || 'var(--text)' }" aria-hidden="true" />
+              <span v-else class="toolkit-icon toolkit-initial" aria-hidden="true">{{ techInitials(skill) }}</span>
+              <span>{{ skill }}</span>
+            </div>
+          </li>
+        </ul>
         <!-- Certifications -->
 
         <div class="credentials" data-reveal>
@@ -1214,11 +989,9 @@ onBeforeUnmount(() => {
         aria-labelledby="experience-title"
       >
         <div class="section-heading" data-reveal>
-          <p class="eyebrow">03 / EXPERIENCE &amp; EDUCATION</p>
           <div class="section-heading-bottom">
             <h2 id="experience-title">
-              Learning.<br />
-              <span class="muted">Through real work.</span>
+              Experience &amp; education.
             </h2>
             <p>Technical operations experience alongside my Information Technology degree.</p>
           </div>
@@ -1226,6 +999,7 @@ onBeforeUnmount(() => {
 
         <article class="background-row" aria-labelledby="role-title" data-reveal>
           <div class="background-meta mono muted">
+            <img class="background-logo" src="/images/cruisechef-logo.png" alt="" width="64" height="64" loading="lazy" />
             <p>September 2026–Present</p>
             <p>Remote</p>
           </div>
@@ -1241,6 +1015,7 @@ onBeforeUnmount(() => {
 
         <article class="background-row" aria-labelledby="education-title" data-reveal>
           <div class="background-meta mono muted">
+            <img class="background-logo" src="/images/dnsc-seal.jpg" alt="" width="64" height="64" loading="lazy" />
             <p>Expected June 2027</p>
             <p>Fourth year</p>
           </div>
@@ -1250,48 +1025,6 @@ onBeforeUnmount(() => {
             <p class="background-description">Panabo City, Philippines</p>
           </div>
         </article>
-      </section>
-
-      <!-- ==================================
-          PROCESS
-      =================================== -->
-
-      <section
-        id="process"
-        class="process-section page-width"
-        aria-labelledby="process-title"
-      >
-        <div class="section-heading" data-reveal>
-          <p class="eyebrow">04 / HOW I BUILD</p>
-
-          <div class="section-heading-bottom">
-            <h2 id="process-title">
-              From idea<br />
-              <span class="muted">to finished product.</span>
-            </h2>
-
-            <p>
-              The process I follow on every project, from capstone
-              research to smaller builds.
-            </p>
-          </div>
-        </div>
-
-        <ol class="process-grid" data-reveal>
-          <li
-            v-for="(step, index) in processSteps"
-            :key="step.title"
-            class="process-step"
-          >
-            <span class="process-index mono">
-              {{ String(index + 1).padStart(2, '0') }}
-            </span>
-
-            <h3>{{ step.title }}</h3>
-
-            <p>{{ step.description }}</p>
-          </li>
-        </ol>
       </section>
 
       <!-- ==================================
@@ -1305,12 +1038,12 @@ onBeforeUnmount(() => {
               <h2 id="github-title">GitHub activity</h2>
               <p class="github-description">A snapshot of my public contributions over the past year.</p>
             </div>
-            <a class="github-profile-link" href="https://github.com/Laurenceonly" target="_blank" rel="noopener noreferrer">@Laurenceonly</a>
           </div>
           <div v-if="!contributionChartFailed" ref="githubChartViewport" class="github-chart-wrap" tabindex="0" role="region" aria-label="GitHub contributions, latest months first; scroll horizontally to view the full year">
-            <img class="github-chart" src="https://ghchart.rshah.org/111111/Laurenceonly" alt="GitHub contribution activity for Laurenceonly over the past year" width="663" height="104" loading="lazy" @load="showRecentGitHubActivity" @error="contributionChartFailed = true" />
+            <img class="github-chart" src="https://ghchart.rshah.org/0878a8/Laurenceonly" alt="GitHub contribution activity for Laurenceonly over the past year" width="663" height="104" loading="lazy" @load="showRecentGitHubActivity" @error="contributionChartFailed = true" />
           </div>
           <p v-else class="github-chart-fallback">The contribution chart is unavailable right now. Visit my GitHub profile to see my activity.</p>
+          <a class="github-profile-link" href="https://github.com/Laurenceonly" target="_blank" rel="noopener noreferrer">View GitHub profile</a>
         </div>
       </section>
 
@@ -1320,16 +1053,8 @@ onBeforeUnmount(() => {
         aria-labelledby="contact-title"
       >
         <div data-reveal>
-          <p class="eyebrow">
-            05 / WHAT'S NEXT?
-          </p>
-
           <h2 id="contact-title">
-            Have something<br />
-
-            <span class="contact-last-line">
-              <span class="muted">in mind?</span>
-            </span>
+            Let's connect.
           </h2>
 
           <div class="contact-columns">
@@ -1435,7 +1160,7 @@ onBeforeUnmount(() => {
                     >
                       <span
                         class="social-link-icon"
-                        :style="{ '--tech-icon': `url('${emailCopied ? mailCopiedIconUrl : mailIconUrl}')` }"
+                        :style="{ '--tech-icon': `url('${emailCopied ? mailCopiedIconUrl : mailIconUrl}')`, '--social-color': '#0878a8' }"
                         aria-hidden="true"
                       />
                     </button>
@@ -1451,7 +1176,7 @@ onBeforeUnmount(() => {
                       <span
                         v-if="link.icon"
                         class="social-link-icon"
-                        :style="{ '--tech-icon': `url('${link.icon}')` }"
+                        :style="{ '--tech-icon': `url('${link.icon}')`, '--social-color': link.name === 'Facebook' ? '#1877f2' : link.name === 'Instagram' ? 'linear-gradient(35deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5)' : 'var(--text)' }"
                       />
                     </a>
                   </template>
