@@ -72,6 +72,31 @@ const skillGroups = [
 ]
 
 const allSkills = [...new Set(skillGroups.flatMap(group => group.skills))]
+const activeSkillGroup = ref(0)
+const toolkitKeyboardNavigation = ref(false)
+const skillTabLabels = ['Web', 'Mobile & AI', 'Tools']
+
+function selectSkillGroup(index: number, event: MouseEvent) {
+  toolkitKeyboardNavigation.value = event.detail === 0
+  activeSkillGroup.value = index
+}
+
+function handleSkillTabKey(event: KeyboardEvent, index: number) {
+  let nextIndex: number
+  switch (event.key) {
+    case 'ArrowRight': nextIndex = (index + 1) % skillGroups.length; break
+    case 'ArrowLeft': nextIndex = (index + skillGroups.length - 1) % skillGroups.length; break
+    case 'Home': nextIndex = 0; break
+    case 'End': nextIndex = skillGroups.length - 1; break
+    default: return
+  }
+  event.preventDefault()
+  toolkitKeyboardNavigation.value = true
+  activeSkillGroup.value = nextIndex
+  const tab = event.currentTarget as HTMLButtonElement
+  tab.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[nextIndex]?.focus()
+}
+
 const skillColors: Record<string, string> = {
   HTML: '#e34f26', CSS: '#1572b6', JavaScript: '#d6b800', TypeScript: '#3178c6',
   Bootstrap: '#7952b3', 'Tailwind CSS': '#06b6d4', 'Three.js': 'var(--text)', GSAP: '#88ce02',
@@ -375,7 +400,50 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <ul class="toolkit-grid" aria-label="Technologies and tools" data-reveal>
+        <div class="toolkit-mobile" :class="{ 'toolkit-instant': toolkitKeyboardNavigation }" data-reveal>
+          <div class="toolkit-tabs" role="tablist" aria-label="Stack categories">
+            <button
+              v-for="(group, index) in skillGroups"
+              :id="`skill-tab-${index}`"
+              :key="group.title"
+              class="toolkit-tab"
+              type="button"
+              role="tab"
+              :aria-selected="activeSkillGroup === index"
+              :aria-controls="`skill-panel-${index}`"
+              :tabindex="activeSkillGroup === index ? 0 : -1"
+              @click="selectSkillGroup(index, $event)"
+              @keydown="handleSkillTabKey($event, index)"
+            >{{ skillTabLabels[index] }}</button>
+          </div>
+          <div class="toolkit-panels">
+            <div
+              v-for="(group, index) in skillGroups"
+              :id="`skill-panel-${index}`"
+              :key="group.title"
+              class="toolkit-panel"
+              :class="{ 'is-active': activeSkillGroup === index }"
+              role="tabpanel"
+              :aria-labelledby="`skill-tab-${index}`"
+              :aria-hidden="activeSkillGroup !== index"
+              :inert="activeSkillGroup !== index"
+              :tabindex="activeSkillGroup === index ? 0 : -1"
+            >
+              <ul class="toolkit-grid" :aria-label="group.title">
+                <li v-for="skill in group.skills" :key="skill" class="toolkit-item" :class="{ 'toolkit-monochrome': ['GitHub', 'Vercel', 'Next.js', 'Three.js', 'Flask'].includes(skill) }">
+                  <div class="toolkit-button">
+                    <img v-if="brandIconUrl(skill)" class="toolkit-brand" :data-skill="skill" :src="brandIconUrl(skill)!" alt="" width="26" height="26" loading="lazy" decoding="async" @error="brokenBrandIcons[skill] = true" />
+                    <span v-else-if="techIconUrl(skill)" class="token-icon toolkit-icon" :style="{ '--tech-icon': `url('${techIconUrl(skill)}')`, '--skill-color': skillColors[skill] || 'var(--text)' }" aria-hidden="true" />
+                    <span v-else class="toolkit-icon toolkit-initial" aria-hidden="true">{{ techInitials(skill) }}</span>
+                    <span>{{ skill }}</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <ul class="toolkit-grid toolkit-desktop" aria-label="Technologies and tools" data-reveal>
           <li v-for="skill in allSkills" :key="skill" class="toolkit-item" :class="{ 'toolkit-monochrome': ['GitHub', 'Vercel', 'Next.js', 'Three.js', 'Flask'].includes(skill) }">
             <div class="toolkit-button">
               <img v-if="brandIconUrl(skill)" class="toolkit-brand" :data-skill="skill" :src="brandIconUrl(skill)!" alt="" loading="lazy" @error="brokenBrandIcons[skill] = true" />

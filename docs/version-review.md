@@ -1,4 +1,4 @@
-# Portfolio checks — October 15, 2026
+ i # Portfolio checks — October 15, 2026
 
 This review covers the current local version, including the Odyssey screenshot, simpler project metadata, aligned section descriptions, removal of Design & Editing, updated contact copy, and the toolkit switching fix. Nothing was deployed.
 
