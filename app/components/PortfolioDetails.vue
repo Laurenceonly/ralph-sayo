@@ -71,8 +71,12 @@ const skillGroups = [
   },
 ]
 
-const allSkills = [...new Set(skillGroups.flatMap(group => group.skills))]
 const activeSkillGroup = ref(0)
+const mobileToolkit = ref(false)
+let toolkitMedia: MediaQueryList | undefined
+function updateToolkitViewport() {
+  mobileToolkit.value = toolkitMedia?.matches ?? false
+}
 const toolkitKeyboardNavigation = ref(false)
 const skillTabLabels = ['Web', 'Mobile & AI', 'Tools']
 
@@ -363,6 +367,9 @@ async function submitContactForm() {
 
 
 onMounted(() => {
+  toolkitMedia = window.matchMedia('(max-width: 720px)')
+  updateToolkitViewport()
+  toolkitMedia.addEventListener('change', updateToolkitViewport)
   // Lazy hydration can attach listeners after an SSR icon has already failed.
   for (const image of document.querySelectorAll<HTMLImageElement>('.toolkit-brand[data-skill]')) {
     const skill = image.dataset.skill
@@ -378,6 +385,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  toolkitMedia?.removeEventListener('change', updateToolkitViewport)
   githubChartResizeObserver?.disconnect()
   clearTimeout(emailCopyTimer)
 })
@@ -400,7 +408,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <div class="toolkit-mobile" :class="{ 'toolkit-instant': toolkitKeyboardNavigation }" data-reveal>
+        <div class="toolkit-categories" :class="{ 'toolkit-instant': toolkitKeyboardNavigation }" data-reveal>
           <div class="toolkit-tabs" role="tablist" aria-label="Stack categories">
             <button
               v-for="(group, index) in skillGroups"
@@ -423,11 +431,11 @@ onBeforeUnmount(() => {
               :key="group.title"
               class="toolkit-panel"
               :class="{ 'is-active': activeSkillGroup === index }"
-              role="tabpanel"
-              :aria-labelledby="`skill-tab-${index}`"
-              :aria-hidden="activeSkillGroup !== index"
-              :inert="activeSkillGroup !== index"
-              :tabindex="activeSkillGroup === index ? 0 : -1"
+              :role="mobileToolkit ? 'tabpanel' : undefined"
+              :aria-labelledby="mobileToolkit ? `skill-tab-${index}` : undefined"
+              :aria-hidden="mobileToolkit ? activeSkillGroup !== index : undefined"
+              :inert="mobileToolkit && activeSkillGroup !== index"
+              :tabindex="mobileToolkit ? (activeSkillGroup === index ? 0 : -1) : undefined"
             >
               <ul class="toolkit-grid" :aria-label="group.title">
                 <li v-for="skill in group.skills" :key="skill" class="toolkit-item" :class="{ 'toolkit-monochrome': ['GitHub', 'Vercel', 'Next.js', 'Three.js', 'Flask'].includes(skill) }">
@@ -443,16 +451,6 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <ul class="toolkit-grid toolkit-desktop" aria-label="Technologies and tools" data-reveal>
-          <li v-for="skill in allSkills" :key="skill" class="toolkit-item" :class="{ 'toolkit-monochrome': ['GitHub', 'Vercel', 'Next.js', 'Three.js', 'Flask'].includes(skill) }">
-            <div class="toolkit-button">
-              <img v-if="brandIconUrl(skill)" class="toolkit-brand" :data-skill="skill" :src="brandIconUrl(skill)!" alt="" loading="lazy" @error="brokenBrandIcons[skill] = true" />
-              <span v-else-if="techIconUrl(skill)" class="token-icon toolkit-icon" :style="{ '--tech-icon': `url('${techIconUrl(skill)}')`, '--skill-color': skillColors[skill] || 'var(--text)' }" aria-hidden="true" />
-              <span v-else class="toolkit-icon toolkit-initial" aria-hidden="true">{{ techInitials(skill) }}</span>
-              <span>{{ skill }}</span>
-            </div>
-          </li>
-        </ul>
         <!-- Certifications -->
 
         <div class="credentials" data-reveal>

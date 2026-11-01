@@ -38,3 +38,15 @@ Production PageSpeed verification remains necessary after deployment, including 
 ## Pre-push regression pass
 
 The final build also passed mobile gallery Next/Previous, reduced-motion theme switching, clipboard copy, native empty/invalid-email validation, intercepted successful contact submission with cleared fields, resume and both certificate HTTP 200/application-pdf responses, and internal anchor checks. A JavaScript-disabled 390px visit retained the heading and native contact form without overflow. The scripted visit recorded zero page exceptions, console errors, and failed requests. The form endpoint was mocked; no real message was sent. Script: output/playwright/optimization-final-check.cjs.
+
+## Mobile stack follow-up - November 1, 2026
+
+The user reported mobile PageSpeed Insights 96 after the compact-stack deployment. A fresh Lighthouse 13.6.0 mobile run against the deployed site measured 98 without run warnings (LCP 2.3s, TBT 50ms, CLS 0). The particular PageSpeed report was unavailable, so the reported 96 was not reproduced or attributed to a specific cause.
+
+Removed the duplicate desktop stack list. Mobile category tabs and the desktop eight-column grid now share the same 40 entries, instead of rendering 80 entries. Responsive CSS preserves both layouts; a cleaned-up media-query listener keeps desktop content accessible and inactive mobile panels inert. Existing category transitions and panel-height reservation remain.
+
+The updated local production build measured mobile performance 98, accessibility 100, Best Practices 100, SEO 100, LCP 2.3s, TBT 20ms, CLS 0, and Speed Index 1.1s. Desktop performance measured 100. Both runs had no warnings. Total page elements measured 329 locally versus 490 on the deployed version. Local and deployed timing results differ in hosting and analytics configuration and are not a controlled before/after experiment or a promise of a particular PageSpeed score.
+
+Production build, type check, diff whitespace checks, and the design detector pass. Browser checks cover 320, 390, 720, 721, and 1440px: no overflow; one accessible active panel on mobile; all 40 entries visible and non-inert on desktop; keyboard controls work. Certification position stays constant between categories, including a production-build check at 320px with reduced motion. Mobile and desktop screenshots were visually inspected.
+
+Local artifacts: output/playwright/mobile-tabs-live-before.json, shared-stack-mobile-after.json, shared-stack-desktop-after.json, shared-stack-check.cjs, shared-stack-mobile.png, shared-stack-desktop.png. Deployment PageSpeed results require a fresh post-deployment test.

@@ -555,7 +555,14 @@ summary {
   margin-top: 0;
 }
 
-.toolkit-mobile { display: none; }
+.toolkit-tabs { display: none; }
+.toolkit-panels {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 24px 12px;
+}
+.toolkit-panel,
+.toolkit-categories .toolkit-grid { display: contents; }
 
 .toolkit-grid {
   display: grid;
@@ -2672,8 +2679,6 @@ body { font-size: var(--type-body); line-height: 1.6; }
 
 /* Compact category browsing on phones; all panels reserve the tallest layout. */
 @media (max-width: 720px) {
-  .toolkit-desktop { display: none; }
-  .toolkit-mobile { display: block; }
   .toolkit-tabs {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2700,8 +2705,9 @@ body { font-size: var(--type-body); line-height: 1.6; }
   .toolkit-tab[aria-selected='true'] { background: var(--bg); color: var(--text); }
   .toolkit-tab:focus-visible,
   .toolkit-panel:focus-visible { outline: 2px solid #0878a8; outline-offset: 3px; }
-  .toolkit-panels { display: grid; }
+  .toolkit-panels { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .toolkit-panel {
+    display: block;
     grid-area: 1 / 1;
     min-width: 0;
     align-self: start;
@@ -2716,8 +2722,8 @@ body { font-size: var(--type-body); line-height: 1.6; }
     transform: translateY(0);
     transition-delay: 0s;
   }
-  .toolkit-mobile .toolkit-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 8px; }
-  .toolkit-mobile .toolkit-item { font-size: 11px; }
+  .toolkit-categories .toolkit-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 8px; }
+  .toolkit-categories .toolkit-item { font-size: 11px; }
   .toolkit-instant .toolkit-panel { transition: none; }
 }
 @media (max-width: 720px) and (prefers-reduced-motion: reduce) {
