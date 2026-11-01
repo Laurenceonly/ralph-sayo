@@ -2332,7 +2332,7 @@ summary {
   position: absolute;
   z-index: -1;
   inset: 0 0 100px;
-  background: url('/images/hero-manhattan-skyline.png') center / cover no-repeat;
+  background: none;
   opacity: .65;
   mask-image: linear-gradient(to bottom, transparent, black 15%, black 75%, transparent);
   pointer-events: none;
@@ -2455,98 +2455,23 @@ summary {
   .github-chart-wrap { margin-top: 24px; }
 }
 
-/* A short first-screen readiness gate; content is already rendered behind it. */
-.startup-loader {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  background: var(--bg);
-  color: var(--text);
-  animation: startup-expire 1ms step-end 4s forwards;
-}
-
-@keyframes startup-expire {
-  to { visibility: hidden; pointer-events: none; }
-}
-
-.startup-label {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.startup-track {
-  position: relative;
-  width: 80px;
-  height: 2px;
-  overflow: hidden;
-  background: var(--line);
-}
-
-.startup-track::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--accent);
-  transform: translateX(-100%);
-  animation: startup-sweep 900ms linear infinite;
-}
-
-@keyframes startup-sweep {
-  to { transform: translateX(100%); }
-}
-
-.startup-leave-active {
-  transition: opacity 180ms var(--ease-out);
-  pointer-events: none;
-}
-
-.startup-leave-to {
-  opacity: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .startup-loader {
-    animation: startup-expire 1ms step-end 4s forwards !important;
-  }
-
-  .startup-track::after {
-    animation: none;
-    transform: none;
-    opacity: 0.6;
-  }
-
-  .startup-leave-active {
-    transition: none;
-  }
-}
-
-.font-fallback {
-  --display: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --body: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --mono: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-family: var(--body);
-}
-
-.headline-font-fallback .hero-title {
-  font-family: var(--display);
-}
-
 /* Keep the hero artwork and introduction in separate, aligned rows. */
+.skills-section,
+.experience-section,
+.github-section,
+.contact-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
 .hero { display: block; padding-top: 0; }
 .hero::before { content: none; }
-.hero-visual { --hero-scene-height: clamp(320px, 43vw, 430px); position: relative; isolation: isolate; height: var(--hero-scene-height); container-type: inline-size; }
-.hero-visual::before,
-.hero-visual::after {
+.hero-visual { --hero-scene-height: clamp(320px, 43vw, 430px); --hero-night: url('/images/hero-night-1280.webp'); --hero-day: url('/images/hero-day-1280.webp'); position: relative; isolation: isolate; height: var(--hero-scene-height); container-type: inline-size; }
+.hero-visual::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: url('/images/hero-manhattan-night-v2.png') center / cover no-repeat;
+  background: var(--hero-night) center / cover no-repeat;
   background-size: max(100cqw, calc(var(--hero-scene-height) * 1636 / 961)) max(calc(100cqw * 961 / 1636), var(--hero-scene-height));
   opacity: .65;
   filter: none;
@@ -2555,9 +2480,11 @@ summary {
   pointer-events: none;
 }
 .hero-visual::before { opacity: .65; }
-.hero-visual::after { background-image: url('/images/hero-manhattan-skyline.png'); opacity: 0; }
-.light .hero-visual::before { opacity: 0; }
-.light .hero-visual::after { opacity: .65; }
+.hero-visual::after { content: none; }
+.light .hero-visual::before { background-image: var(--hero-day); }
+@media (max-width: 720px) {
+  .hero-visual { --hero-night: url('/images/hero-night-768.webp'); --hero-day: url('/images/hero-day-768.webp'); }
+}
 body { transition: background-color 300ms ease, color 300ms ease; }
 @media (prefers-reduced-motion: reduce) {
   .hero-visual::before, .hero-visual::after, body { transition: none; }

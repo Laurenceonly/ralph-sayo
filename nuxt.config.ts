@@ -1,21 +1,23 @@
+import process from 'node:process'
+
 export default defineNuxtConfig({
   compatibilityDate: '2026-09-17',
   devtools: {
     enabled: true,
   },
 
-  modules: ['@nuxtjs/color-mode', '@vercel/analytics'],
+  modules: ['@nuxtjs/color-mode', ...(process.env.VERCEL ? ['@vercel/analytics'] : [])],
 
   css: ['~/assets/css/main.css'],
 
-  hooks: {
-    'build:manifest': (manifest) => {
-      // These chunks are requested by initializeMotion when motion is enabled.
-      // Nuxt's automatic prefetch otherwise downloads them on reduced-motion visits too.
-      for (const [id, chunk] of Object.entries(manifest)) {
-        if (id.replaceAll('\\', '/').includes('/gsap/')) chunk.prefetch = false
-      }
-    },
+  nitro: {
+    compressPublicAssets: true,
+  },
+
+  routeRules: {
+    '/': { prerender: true },
+    '/images/**': { headers: { 'cache-control': 'public, max-age=2592000' } },
+    '/fonts/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
   },
 
   colorMode: {
